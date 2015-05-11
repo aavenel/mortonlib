@@ -142,6 +142,8 @@ public:
 		x = _pext_u64(m1.key, x3_mask);
 		y = _pext_u64(m1.key, y3_mask);
 		z = _pext_u64(m1.key, z3_mask);
+#else
+    //TODO
 #endif
 	}
 
