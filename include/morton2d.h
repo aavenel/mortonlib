@@ -33,17 +33,27 @@ public:
 #endif
 	}
 
-	static inline void decode(const morton2d m1, uint64_t& x, uint64_t& y)
+	inline void decode(uint64_t& x, uint64_t& y)
 	{
 #ifdef USE_BMI2
-		x = _pext_u64(m1.key, x2_mask);
-		y = _pext_u64(m1.key, y2_mask);
+		x = _pext_u64(this->key, x2_mask);
+		y = _pext_u64(this->key, y2_mask);
 #else
 		//TODO
 #endif
 	}
 
 	//Binary operators
+  inline bool operator==(const morton2d m1) const
+  {
+    return this->key == m1.key;
+  }
+
+  inline bool operator!=(const morton2d m1) const
+  {
+    return !operator==(m1);
+  }
+
 	inline morton2d operator|(const morton2d m1) const
 	{
 		return this->key | m1.key;
@@ -86,6 +96,16 @@ public:
   {
     uint64_t y_diff = (m1.key & y2_mask) - 2;
     return (y_diff & y2_mask) | (m1.key & x2_mask);
+  }
+
+  static inline void decode(const morton2d m1, uint64_t& x, uint64_t& y)
+  {
+#ifdef USE_BMI2
+    x = _pext_u64(m1.key, x2_mask);
+    y = _pext_u64(m1.key, y2_mask);
+#else
+    //TODO
+#endif
   }
 
 #ifndef USE_BMI2
