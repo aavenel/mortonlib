@@ -7,8 +7,9 @@
 #include <immintrin.h>
 
 
-//#define USE_BMI2
+#define USE_BMI2
 
+#ifndef USE_BMI2
 //mortonkey(x+1) = (mortonkey(x) - MAXMORTONKEY) & MAXMORTONKEY
 static const uint32_t morton3dLUT[256] =
 {
@@ -45,6 +46,7 @@ static const uint32_t morton3dLUT[256] =
   0x00249000, 0x00249001, 0x00249008, 0x00249009, 0x00249040, 0x00249041, 0x00249048, 0x00249049,
   0x00249200, 0x00249201, 0x00249208, 0x00249209, 0x00249240, 0x00249241, 0x00249248, 0x00249249
 };
+#endif
 
 //Tesseral arithmetic
 const uint64_t x3_mask = 0x9249249249249249; // 0b...01001001
@@ -170,6 +172,28 @@ public:
 		return (z_diff & z3_mask) | (m1.key & xy3_mask);
 	}
 
+  static inline morton3d min(const morton3d lhs, const morton3d rhs)
+  {
+    uint64_t lhsX = lhs.key & x3_mask;
+    uint64_t rhsX = rhs.key & x3_mask;
+    uint64_t lhsY = lhs.key & y3_mask;
+    uint64_t rhsY = rhs.key & y3_mask;
+    uint64_t lhsZ = lhs.key & z3_mask;
+    uint64_t rhsZ = rhs.key & z3_mask;
+    return morton3d(std::min(lhsX, rhsX) + std::min(lhsY, rhsY) + std::min(lhsZ, rhsZ));
+  }
+
+  static inline morton3d max(const morton3d lhs, const morton3d rhs)
+  {
+    uint64_t lhsX = lhs.key & x3_mask;
+    uint64_t rhsX = rhs.key & x3_mask;
+    uint64_t lhsY = lhs.key & y3_mask;
+    uint64_t rhsY = rhs.key & y3_mask;
+    uint64_t lhsZ = lhs.key & z3_mask;
+    uint64_t rhsZ = rhs.key & z3_mask;
+    return morton3d(std::max(lhsX, rhsX) + std::max(lhsY, rhsY) + std::max(lhsZ, rhsZ));
+  }
+
 	static inline void decode(const morton3d m1, uint64_t& x, uint64_t& y, uint64_t& z)
 	{
 //#ifdef USE_BMI2
@@ -200,6 +224,12 @@ morton3d operator-(const morton3d m1, const morton3d m2)
 	uint64_t y_diff = (m1.key & y3_mask) - (m2.key & y3_mask);
 	uint64_t z_diff = (m1.key & z3_mask) - (m2.key & z3_mask);
 	return (x_diff & x3_mask) | (y_diff & y3_mask) | (z_diff & z3_mask);
+}
+
+std::ostream& operator<<(std::ostream& os, const morton3d& m)
+{
+  os << m.key;
+  return os;
 }
 
 #endif

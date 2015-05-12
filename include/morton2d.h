@@ -110,6 +110,7 @@ public:
 		return this->key << (2 * d);
 	}
 
+  //Increments
   static inline morton2d incX(morton2d m1)
   {
     uint64_t x_sum = (m1.key | y2_mask) + 1;
@@ -188,6 +189,12 @@ morton2d operator-(const morton2d lhs, const morton2d rhs)
   uint64_t x_diff = (lhs.key & x2_mask) - (rhs.key & x2_mask);
   uint64_t y_diff = (lhs.key & y2_mask) - (rhs.key & y2_mask);
 	return (x_diff & x2_mask) | (y_diff & y2_mask);
+}
+
+std::ostream& operator<<(std::ostream& os, const morton2d& m)
+{
+  os << m.key;
+  return os;
 }
 
 #endif
