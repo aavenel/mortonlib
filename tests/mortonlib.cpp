@@ -84,6 +84,13 @@ void test_morton3d()
   assert(m1 - morton3d(0, 1, 0) == morton3d::decY(m1));
   assert(m1 - morton3d(0, 0, 1) == morton3d::decZ(m1));
 
+  //Min & Max
+  morton3d m4 = morton3d(75, 15, 16);
+  morton3d m5 = morton3d(48, 79, 26);
+  assert(morton3d::min(m4, m5) == morton3d(48, 15, 16));
+  assert(morton3d::max(m4, m5) == morton3d(75, 79, 26));
+
+
 }
 
 int main(int argc, char *argv[])
