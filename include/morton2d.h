@@ -168,8 +168,8 @@ public:
 	static inline morton2d morton2d_256(const uint32_t x, const uint32_t y)
 	{
 		assert(x < 256 && y < 256);
-		uint64_t key = morton2dLUT[y] << 1 |
-			morton2dLUT[x];
+		T key = morton2dLUT[y] << 1 |
+			      morton2dLUT[x];
 		return morton2d(key);
 	}
 #endif
@@ -178,7 +178,7 @@ public:
 
 /* Add two morton keys (xy interleaving) */
 template<class T>
-morton2d<T> operator+(const morton2d<T> lhs, const morton2d<T> rhs)
+inline morton2d<T> operator+(const morton2d<T> lhs, const morton2d<T> rhs)
 {
   T x_sum = (lhs.key | y2_mask) + (rhs.key & x2_mask);
   T y_sum = (lhs.key | x2_mask) + (rhs.key & y2_mask);
@@ -187,11 +187,35 @@ morton2d<T> operator+(const morton2d<T> lhs, const morton2d<T> rhs)
 
 /* Substract two mortons keys (xy interleaving) */
 template<class T>
-morton2d<T> operator-(const morton2d<T> lhs, const morton2d<T> rhs)
+inline morton2d<T> operator-(const morton2d<T> lhs, const morton2d<T> rhs)
 {
   T x_diff = (lhs.key & x2_mask) - (rhs.key & x2_mask);
   T y_diff = (lhs.key & y2_mask) - (rhs.key & y2_mask);
 	return (x_diff & x2_mask) | (y_diff & y2_mask);
+}
+
+template<class T>
+inline bool operator< (const morton2d<T>& lhs, const morton2d<T>& rhs)
+{
+  return (lhs.key) < (rhs.key);
+}
+
+template<class T>
+inline bool operator> (const morton2d<T>& lhs, const morton2d<T>& rhs)
+{
+  return (lhs.key) > (rhs.key);
+}
+
+template<class T>
+inline bool operator>= (const morton2d<T>& lhs, const morton2d<T>& rhs)
+{
+  return (lhs.key) >= (rhs.key);
+}
+
+template<class T>
+inline bool operator<= (const morton2d<T>& lhs, const morton2d<T>& rhs)
+{
+  return (lhs.key) <= (rhs.key);
 }
 
 template<class T>

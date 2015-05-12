@@ -211,7 +211,7 @@ public:
 
 /* Add two morton keys (xyz interleaving) */
 template<class T>
-morton3d<T> operator+(const morton3d<T> m1, const morton3d<T> m2)
+inline morton3d<T> operator+(const morton3d<T> m1, const morton3d<T> m2)
 {
 	T x_sum = (m1.key | yz3_mask) + (m2.key & x3_mask);
 	T y_sum = (m1.key | xz3_mask) + (m2.key & y3_mask);
@@ -221,12 +221,36 @@ morton3d<T> operator+(const morton3d<T> m1, const morton3d<T> m2)
 
 /* Substract two morton keys (xyz interleaving) */
 template<class T>
-morton3d<T> operator-(const morton3d<T> m1, const morton3d<T> m2)
+inline morton3d<T> operator-(const morton3d<T> m1, const morton3d<T> m2)
 {
 	T x_diff = (m1.key & x3_mask) - (m2.key & x3_mask);
 	T y_diff = (m1.key & y3_mask) - (m2.key & y3_mask);
 	T z_diff = (m1.key & z3_mask) - (m2.key & z3_mask);
 	return morton3d<T>((x_diff & x3_mask) | (y_diff & y3_mask) | (z_diff & z3_mask));
+}
+
+template<class T>
+inline bool operator< (const morton3d<T>& lhs, const morton3d<T>& rhs)
+{
+  return (lhs.key) < (rhs.key);
+}
+
+template<class T>
+inline bool operator> (const morton3d<T>& lhs, const morton3d<T>& rhs)
+{
+  return (lhs.key) > (rhs.key);
+}
+
+template<class T>
+inline bool operator>= (const morton3d<T>& lhs, const morton3d<T>& rhs)
+{
+  return (lhs.key) >= (rhs.key);
+}
+
+template<class T>
+inline bool operator<= (const morton3d<T>& lhs, const morton3d<T>& rhs)
+{
+  return (lhs.key) <= (rhs.key);
 }
 
 template<class T>
