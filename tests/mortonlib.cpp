@@ -3,6 +3,8 @@
 #include <assert.h>
 #include <cstdint>
 
+#include <iostream>
+
 #include "../include/morton2d.h"
 #include "../include/morton3d.h"
 
@@ -11,7 +13,7 @@ void test_morton2d()
 {
 	morton2d(0, 0);
 
-  uint32_t x, y, z;
+  uint32_t x, y;
   x = 15; y = 79;
   morton2d m1 = morton2d(x, y);
 
@@ -38,6 +40,13 @@ void test_morton2d()
   assert(m1 + morton2d(0, 1) == morton2d::incY(m1));
   assert(m1 - morton2d(1, 0) == morton2d::decX(m1));
   assert(m1 - morton2d(0, 1) == morton2d::decY(m1));
+
+  //Min & Max
+  morton2d m4 = morton2d(75, 15);
+  morton2d m5 = morton2d(48, 79);
+  assert(morton2d::min(m4, m5) == morton2d(48, 15));
+  assert(morton2d::max(m4, m5) == morton2d(75, 79));
+
 }
 
 void test_morton3d()

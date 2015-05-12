@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <array>
+#include <algorithm>
 #include <assert.h>
 #include <immintrin.h>
 
@@ -133,6 +134,24 @@ public:
     return (y_diff & y2_mask) | (m1.key & x2_mask);
   }
 
+  static inline morton2d min(const morton2d lhs, const morton2d rhs)
+  {
+    uint64_t lhsX = lhs.key & x2_mask;
+    uint64_t rhsX = rhs.key & x2_mask;
+    uint64_t lhsY = lhs.key & y2_mask;
+    uint64_t rhsY = rhs.key & y2_mask;
+    return morton2d(std::min(lhsX, rhsX) + std::min(lhsY, rhsY));
+  }
+
+  static inline morton2d max(const morton2d lhs, const morton2d rhs) 
+  {
+    uint64_t lhsX = lhs.key & x2_mask;
+    uint64_t rhsX = rhs.key & x2_mask;
+    uint64_t lhsY = lhs.key & y2_mask;
+    uint64_t rhsY = rhs.key & y2_mask;
+    return morton2d(std::max(lhsX, rhsX) + std::max(lhsY, rhsY));
+  }
+
   static inline void decode(const morton2d m1, uint64_t& x, uint64_t& y)
   {
 #ifdef USE_BMI2
@@ -156,18 +175,18 @@ public:
 };
 
 /* Add two morton keys (xy interleaving) */
-morton2d operator+(const morton2d m1, const morton2d m2)
+morton2d operator+(const morton2d lhs, const morton2d rhs)
 {
-	uint64_t x_sum = (m1.key | y2_mask) + (m2.key & x2_mask);
-	uint64_t y_sum = (m1.key | x2_mask) + (m2.key & y2_mask);
+  uint64_t x_sum = (lhs.key | y2_mask) + (rhs.key & x2_mask);
+  uint64_t y_sum = (lhs.key | x2_mask) + (rhs.key & y2_mask);
 	return (x_sum & x2_mask) | (y_sum & y2_mask);
 }
 
 /* Substract two mortons keys (xy interleaving) */
-morton2d operator-(const morton2d m1, const morton2d m2)
+morton2d operator-(const morton2d lhs, const morton2d rhs)
 {
-	uint64_t x_diff = (m1.key & x2_mask) - (m2.key & x2_mask);
-	uint64_t y_diff = (m1.key & y2_mask) - (m2.key & y2_mask);
+  uint64_t x_diff = (lhs.key & x2_mask) - (rhs.key & x2_mask);
+  uint64_t y_diff = (lhs.key & y2_mask) - (rhs.key & y2_mask);
 	return (x_diff & x2_mask) | (y_diff & y2_mask);
 }
 
