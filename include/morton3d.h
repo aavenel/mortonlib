@@ -56,14 +56,15 @@ const uint64_t xy3_mask = x3_mask | y3_mask;
 const uint64_t xz3_mask = x3_mask | z3_mask;
 const uint64_t yz3_mask = y3_mask | z3_mask;
 
+template<class T = uint64_t>
 struct morton3d
 {
 public:
-	uint64_t key;
+	T key;
 
 public:
 
-	inline morton3d(const uint64_t _key) : key(_key){};
+	inline morton3d(const T _key) : key(_key){};
 
 	inline morton3d(const uint32_t x, const uint32_t y, const uint32_t z) : key(0){
 #ifdef USE_BMI2
@@ -138,59 +139,59 @@ public:
 
 	static inline morton3d incX(const morton3d m1)
 	{
-		uint64_t x_sum = (m1.key | yz3_mask) + 1;
+		T x_sum = (m1.key | yz3_mask) + 1;
 		return (x_sum & x3_mask) | (m1.key & yz3_mask);
 	}
 
 	static inline morton3d incY(const morton3d m1)
 	{
-		uint64_t y_sum = (m1.key | xz3_mask) + 2;
+		T y_sum = (m1.key | xz3_mask) + 2;
 		return (y_sum & y3_mask) | (m1.key & xz3_mask);
 	}
 
 	static inline morton3d incZ(const morton3d m1)
 	{
-		uint64_t z_sum = (m1.key | xy3_mask) + 4;
+		T z_sum = (m1.key | xy3_mask) + 4;
 		return (z_sum & z3_mask) | (m1.key & xy3_mask);
 	}
 
 	static inline morton3d decX(const morton3d m1)
 	{
-		uint64_t x_diff = (m1.key & x3_mask) - 1;
+		T x_diff = (m1.key & x3_mask) - 1;
 		return (x_diff & x3_mask) | (m1.key & yz3_mask);
 	}
 
 	static inline morton3d decY(const morton3d m1)
 	{
-		uint64_t y_diff = (m1.key & y3_mask) - 2;
+		T y_diff = (m1.key & y3_mask) - 2;
 		return (y_diff & y3_mask) | (m1.key & xz3_mask);
 	}
 
 	static inline morton3d decZ(const morton3d m1)
 	{
-		uint64_t z_diff = (m1.key & z3_mask) - 4;
+		T z_diff = (m1.key & z3_mask) - 4;
 		return (z_diff & z3_mask) | (m1.key & xy3_mask);
 	}
 
   static inline morton3d min(const morton3d lhs, const morton3d rhs)
   {
-    uint64_t lhsX = lhs.key & x3_mask;
-    uint64_t rhsX = rhs.key & x3_mask;
-    uint64_t lhsY = lhs.key & y3_mask;
-    uint64_t rhsY = rhs.key & y3_mask;
-    uint64_t lhsZ = lhs.key & z3_mask;
-    uint64_t rhsZ = rhs.key & z3_mask;
+    T lhsX = lhs.key & x3_mask;
+    T rhsX = rhs.key & x3_mask;
+    T lhsY = lhs.key & y3_mask;
+    T rhsY = rhs.key & y3_mask;
+    T lhsZ = lhs.key & z3_mask;
+    T rhsZ = rhs.key & z3_mask;
     return morton3d(std::min(lhsX, rhsX) + std::min(lhsY, rhsY) + std::min(lhsZ, rhsZ));
   }
 
   static inline morton3d max(const morton3d lhs, const morton3d rhs)
   {
-    uint64_t lhsX = lhs.key & x3_mask;
-    uint64_t rhsX = rhs.key & x3_mask;
-    uint64_t lhsY = lhs.key & y3_mask;
-    uint64_t rhsY = rhs.key & y3_mask;
-    uint64_t lhsZ = lhs.key & z3_mask;
-    uint64_t rhsZ = rhs.key & z3_mask;
+    T lhsX = lhs.key & x3_mask;
+    T rhsX = rhs.key & x3_mask;
+    T lhsY = lhs.key & y3_mask;
+    T rhsY = rhs.key & y3_mask;
+    T lhsZ = lhs.key & z3_mask;
+    T rhsZ = rhs.key & z3_mask;
     return morton3d(std::max(lhsX, rhsX) + std::max(lhsY, rhsY) + std::max(lhsZ, rhsZ));
   }
 
@@ -209,27 +210,32 @@ public:
 
 
 /* Add two morton keys (xyz interleaving) */
-morton3d operator+(const morton3d m1, const morton3d m2)
+template<class T>
+morton3d<T> operator+(const morton3d<T> m1, const morton3d<T> m2)
 {
-	uint64_t x_sum = (m1.key | yz3_mask) + (m2.key & x3_mask);
-	uint64_t y_sum = (m1.key | xz3_mask) + (m2.key & y3_mask);
-	uint64_t z_sum = (m1.key | xy3_mask) + (m2.key & z3_mask);
-	return (x_sum & x3_mask) | (y_sum & y3_mask) | (z_sum & z3_mask);
+	T x_sum = (m1.key | yz3_mask) + (m2.key & x3_mask);
+	T y_sum = (m1.key | xz3_mask) + (m2.key & y3_mask);
+	T z_sum = (m1.key | xy3_mask) + (m2.key & z3_mask);
+	return morton3d<T>((x_sum & x3_mask) | (y_sum & y3_mask) | (z_sum & z3_mask));
 }
 
 /* Substract two morton keys (xyz interleaving) */
-morton3d operator-(const morton3d m1, const morton3d m2)
+template<class T>
+morton3d<T> operator-(const morton3d<T> m1, const morton3d<T> m2)
 {
-	uint64_t x_diff = (m1.key & x3_mask) - (m2.key & x3_mask);
-	uint64_t y_diff = (m1.key & y3_mask) - (m2.key & y3_mask);
-	uint64_t z_diff = (m1.key & z3_mask) - (m2.key & z3_mask);
-	return (x_diff & x3_mask) | (y_diff & y3_mask) | (z_diff & z3_mask);
+	T x_diff = (m1.key & x3_mask) - (m2.key & x3_mask);
+	T y_diff = (m1.key & y3_mask) - (m2.key & y3_mask);
+	T z_diff = (m1.key & z3_mask) - (m2.key & z3_mask);
+	return morton3d<T>((x_diff & x3_mask) | (y_diff & y3_mask) | (z_diff & z3_mask));
 }
 
-std::ostream& operator<<(std::ostream& os, const morton3d& m)
+template<class T>
+std::ostream& operator<<(std::ostream& os, const morton3d<T>& m)
 {
   os << m.key;
   return os;
 }
+
+typedef morton3d<> morton3;
 
 #endif

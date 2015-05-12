@@ -50,15 +50,16 @@ static const uint32_t morton2dLUT[256] =
 const uint64_t x2_mask = 0x55555555; //0b...01010101
 const uint64_t y2_mask = 0xAAAAAAAA; //0b...10101010
 
+template<class T = uint64_t>
 struct morton2d
 {
 public:
-	uint64_t key;
+	T key;
 
 public:
 
 	morton2d() : key(0){};
-	morton2d(uint64_t _key) : key(_key){};
+	morton2d(T _key) : key(_key){};
 
 	inline morton2d(const uint32_t x, const uint32_t y) : key(0){
 
@@ -113,43 +114,43 @@ public:
   //Increments
   static inline morton2d incX(morton2d m1)
   {
-    uint64_t x_sum = (m1.key | y2_mask) + 1;
+    T x_sum = (m1.key | y2_mask) + 1;
     return (x_sum & x2_mask) | (m1.key & y2_mask);
   }
 
   static inline morton2d incY(morton2d m1)
   {
-    uint64_t y_sum = (m1.key | x2_mask) + 2;
+    T y_sum = (m1.key | x2_mask) + 2;
     return (y_sum & y2_mask) | (m1.key & x2_mask);
 }
 
   static inline morton2d decX(morton2d m1)
   {
-    uint64_t x_diff = (m1.key & x2_mask) - 1;
+    T x_diff = (m1.key & x2_mask) - 1;
     return (x_diff & x2_mask) | (m1.key & y2_mask);
   }
 
   static inline morton2d decY(morton2d m1)
   {
-    uint64_t y_diff = (m1.key & y2_mask) - 2;
+    T y_diff = (m1.key & y2_mask) - 2;
     return (y_diff & y2_mask) | (m1.key & x2_mask);
   }
 
   static inline morton2d min(const morton2d lhs, const morton2d rhs)
   {
-    uint64_t lhsX = lhs.key & x2_mask;
-    uint64_t rhsX = rhs.key & x2_mask;
-    uint64_t lhsY = lhs.key & y2_mask;
-    uint64_t rhsY = rhs.key & y2_mask;
+    T lhsX = lhs.key & x2_mask;
+    T rhsX = rhs.key & x2_mask;
+    T lhsY = lhs.key & y2_mask;
+    T rhsY = rhs.key & y2_mask;
     return morton2d(std::min(lhsX, rhsX) + std::min(lhsY, rhsY));
   }
 
   static inline morton2d max(const morton2d lhs, const morton2d rhs) 
   {
-    uint64_t lhsX = lhs.key & x2_mask;
-    uint64_t rhsX = rhs.key & x2_mask;
-    uint64_t lhsY = lhs.key & y2_mask;
-    uint64_t rhsY = rhs.key & y2_mask;
+    T lhsX = lhs.key & x2_mask;
+    T rhsX = rhs.key & x2_mask;
+    T lhsY = lhs.key & y2_mask;
+    T rhsY = rhs.key & y2_mask;
     return morton2d(std::max(lhsX, rhsX) + std::max(lhsY, rhsY));
   }
 
@@ -176,25 +177,30 @@ public:
 };
 
 /* Add two morton keys (xy interleaving) */
-morton2d operator+(const morton2d lhs, const morton2d rhs)
+template<class T>
+morton2d<T> operator+(const morton2d<T> lhs, const morton2d<T> rhs)
 {
-  uint64_t x_sum = (lhs.key | y2_mask) + (rhs.key & x2_mask);
-  uint64_t y_sum = (lhs.key | x2_mask) + (rhs.key & y2_mask);
+  T x_sum = (lhs.key | y2_mask) + (rhs.key & x2_mask);
+  T y_sum = (lhs.key | x2_mask) + (rhs.key & y2_mask);
 	return (x_sum & x2_mask) | (y_sum & y2_mask);
 }
 
 /* Substract two mortons keys (xy interleaving) */
-morton2d operator-(const morton2d lhs, const morton2d rhs)
+template<class T>
+morton2d<T> operator-(const morton2d<T> lhs, const morton2d<T> rhs)
 {
-  uint64_t x_diff = (lhs.key & x2_mask) - (rhs.key & x2_mask);
-  uint64_t y_diff = (lhs.key & y2_mask) - (rhs.key & y2_mask);
+  T x_diff = (lhs.key & x2_mask) - (rhs.key & x2_mask);
+  T y_diff = (lhs.key & y2_mask) - (rhs.key & y2_mask);
 	return (x_diff & x2_mask) | (y_diff & y2_mask);
 }
 
-std::ostream& operator<<(std::ostream& os, const morton2d& m)
+template<class T>
+std::ostream& operator<<(std::ostream& os, const morton2d<T>& m)
 {
   os << m.key;
   return os;
 }
+
+typedef morton2d<> morton2;
 
 #endif
