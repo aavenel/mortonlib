@@ -84,7 +84,7 @@ public:
 #endif
 	}
 
-  inline void decode(uint64_t& x, uint64_t& y, uint64_t& z)
+  inline void decode(uint64_t& x, uint64_t& y, uint64_t& z) const
   {
 #ifdef USE_BMI2
     x = _pext_u64(this->key, x3_mask);
@@ -195,17 +195,6 @@ public:
     return morton3d(std::max(lhsX, rhsX) + std::max(lhsY, rhsY) + std::max(lhsZ, rhsZ));
   }
 
-	static inline void decode(const morton3d m1, uint64_t& x, uint64_t& y, uint64_t& z)
-	{
-//#ifdef USE_BMI2
-		x = _pext_u64(m1.key, x3_mask);
-		y = _pext_u64(m1.key, y3_mask);
-		z = _pext_u64(m1.key, z3_mask);
-//#else
-    //TODO
-//#endif
-	}
-
 };
 
 
@@ -256,7 +245,9 @@ inline bool operator<= (const morton3d<T>& lhs, const morton3d<T>& rhs)
 template<class T>
 std::ostream& operator<<(std::ostream& os, const morton3d<T>& m)
 {
-  os << m.key;
+  uint64_t x, y, z;
+  m.decode(x, y, z);
+  os << m.key << ": " << x << ", " << y << ", " << z ;
   return os;
 }
 

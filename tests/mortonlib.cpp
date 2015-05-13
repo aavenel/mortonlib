@@ -19,7 +19,7 @@ void test_morton2d()
 
   //Decode
   uint64_t x1, y1;
-  morton2::decode(m1, x1, y1);
+  m1.decode(x1, y1);
   assert(x1 == x && y1 == y);
 
   //operator+
@@ -47,6 +47,10 @@ void test_morton2d()
   assert(morton2::min(m4, m5) == morton2(48, 15));
   assert(morton2::max(m4, m5) == morton2(75, 79));
 
+  //Comp
+  assert(m4 < m5);
+  assert(m5 > m4);
+
 }
 
 void test_morton3d()
@@ -59,7 +63,7 @@ void test_morton3d()
   
   //Decode
 	uint64_t x1, y1, z1;
-	morton3::decode(m1, x1, y1, z1);
+	m1.decode(x1, y1, z1);
 	assert(x1 == x && y1 == y && z1 == z);
 
   //operator+
@@ -89,6 +93,11 @@ void test_morton3d()
   morton3 m5 = morton3(48, 79, 26);
   assert(morton3::min(m4, m5) == morton3(48, 15, 16));
   assert(morton3::max(m4, m5) == morton3(75, 79, 26));
+
+  //Comp
+  assert(m4 < m5);
+  assert(m5 > m4);
+
 }
 
 int main(int argc, char *argv[])

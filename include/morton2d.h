@@ -70,7 +70,7 @@ public:
 #endif
 	}
 
-	inline void decode(uint64_t& x, uint64_t& y)
+	inline void decode(uint64_t& x, uint64_t& y) const
 	{
 #ifdef USE_BMI2
 		x = _pext_u64(this->key, x2_mask);
@@ -154,16 +154,6 @@ public:
     return morton2d(std::max(lhsX, rhsX) + std::max(lhsY, rhsY));
   }
 
-  static inline void decode(const morton2d m1, uint64_t& x, uint64_t& y)
-  {
-#ifdef USE_BMI2
-    x = _pext_u64(m1.key, x2_mask);
-    y = _pext_u64(m1.key, y2_mask);
-#else
-    //TODO
-#endif
-  }
-
 #ifndef USE_BMI2
 	static inline morton2d morton2d_256(const uint32_t x, const uint32_t y)
 	{
@@ -221,7 +211,9 @@ inline bool operator<= (const morton2d<T>& lhs, const morton2d<T>& rhs)
 template<class T>
 std::ostream& operator<<(std::ostream& os, const morton2d<T>& m)
 {
-  os << m.key;
+  uint64_t x, y;
+  m.decode(x, y);
+  os << m.key << ": " << x << ", " << y;
   return os;
 }
 
