@@ -73,7 +73,7 @@ public:
 		key = morton3dLUT[(z >> 16) & 0xFF] << 2 |
 			morton3dLUT[(y >> 16) & 0xFF] << 1 |
 			morton3dLUT[(x >> 16) & 0xFF];
-		key = key << 48 |
+		key = key << 24 |
 			morton3dLUT[(z >> 8) & 0xFF] << 2 |
 			morton3dLUT[(y >> 8) & 0xFF] << 1 |
 			morton3dLUT[(x >> 8) & 0xFF];
