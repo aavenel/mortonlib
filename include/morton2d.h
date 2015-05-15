@@ -66,7 +66,17 @@ public:
 #ifdef USE_BMI2
 		key = _pdep_u64(y, y2_mask) | _pdep_u64(x, x2_mask);
 #else
-		//TODO
+    key = morton2dLUT[(y >> 24) & 0xFF] << 1 |
+      morton2dLUT[(x >> 24) & 0xFF];
+    key = key << 16 |
+		  morton2dLUT[(y >> 16) & 0xFF] << 1 |
+			morton2dLUT[(x >> 16) & 0xFF];
+		key = key << 16 |
+			morton2dLUT[(y >> 8) & 0xFF] << 1 |
+			morton2dLUT[(x >> 8) & 0xFF];
+		key = key << 16 |
+		  morton2dLUT[y & 0xFF] << 1 |
+		  morton2dLUT[x & 0xFF];
 #endif
 	}
 
