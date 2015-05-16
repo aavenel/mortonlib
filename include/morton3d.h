@@ -90,6 +90,10 @@ public:
     x = _pext_u64(this->key, x3_mask);
     y = _pext_u64(this->key, y3_mask);
     z = _pext_u64(this->key, z3_mask);
+#else
+    x = compactBits(this->key);
+    y = compactBits(this->key >> 1);
+    z = compactBits(this->key >> 2);
 #endif
   }
 
@@ -193,6 +197,17 @@ public:
     T lhsZ = lhs.key & z3_mask;
     T rhsZ = rhs.key & z3_mask;
     return morton3d(std::max(lhsX, rhsX) + std::max(lhsY, rhsY) + std::max(lhsZ, rhsZ));
+  }
+
+private:
+  inline uint64_t compactBits(uint64_t n) const
+  {
+    n &= 0x9249249249249249;
+    n = (n ^ (n >> 2)) & 0x030c30c3030c30c3;
+    n = (n ^ (n >> 4)) & 0xf00f00f00f00f00f;
+    n = (n ^ (n >> 8)) & 0x00ff0000ff0000ff;
+    n = (n ^ (n >> 16)) & 0x7fffff;
+    return n;
   }
 
 };

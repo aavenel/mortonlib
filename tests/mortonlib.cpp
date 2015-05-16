@@ -60,6 +60,8 @@ void test_morton3d()
 	uint32_t x, y, z;
 	x = 15; y = 79; z = 74;
 	morton3 m1 = morton3(x, y, z);
+
+  assert(morton3(0x1fffff, 0x1fffff, 0x1fffff) == morton3(0x7fffffffffffffff));
   
   //Decode
 	uint64_t x1, y1, z1;

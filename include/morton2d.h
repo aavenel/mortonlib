@@ -86,7 +86,8 @@ public:
 		x = _pext_u64(this->key, x2_mask);
 		y = _pext_u64(this->key, y2_mask);
 #else
-		//TODO
+    x = compactBits(this->key);
+    y = compactBits(this->key >> 1);
 #endif
 	}
 
@@ -172,6 +173,18 @@ public:
 			      morton2dLUT[x];
 		return morton2d(key);
 	}
+
+private:
+  //TODO : convert to x64
+  inline uint64_t compactBits(uint64_t n) const
+  {
+    n &= 0x55555555;
+    n = (n ^ (n >> 1)) & 0x33333333;
+    n = (n ^ (n >> 2)) & 0x0f0f0f0f;
+    n = (n ^ (n >> 4)) & 0x00ff00ff;
+    n = (n ^ (n >> 8)) & 0x0000ffff;
+    return n;
+  }
 #endif
 
 };
