@@ -22,6 +22,22 @@ void test_morton2d()
   m1.decode(x1, y1);
   assert(x1 == x && y1 == y);
 
+  //64 bits morton code
+  {
+    uint64_t x64, y64;
+    morton2 m64 = morton2(0xffffffffffffffff);
+    assert(morton2(0xffffffff, 0xffffffff) == m64);
+    m64.decode(x64, y64);
+    assert(x64 == 0xffffffff);
+    assert(y64 == 0xffffffff);
+
+    m64 = morton2(0xaaaaaaaaaaaaaaaa);
+    assert(morton2(0x0, 0xffffffff) == m64);
+    m64.decode(x64, y64);
+    assert(x64 == 0x0);
+    assert(y64 == 0xffffffff);
+  }
+
   //operator+
   auto m2 = m1 + morton2(4, 5);
   assert(m2 == morton2(x + 4, y + 5));
@@ -33,13 +49,13 @@ void test_morton2d()
   assert(m1 == m1 - morton2(0, 0));
 
   //increments
-  assert(m1 == morton2::decX(morton2::incX(m1)));
-  assert(m1 == morton2::decY(morton2::incY(m1)));
+  assert(m1 == m1.incX().decX());
+  assert(m1 == m1.incY().decY());
 
-  assert(m1 + morton2(1, 0) == morton2::incX(m1));
-  assert(m1 + morton2(0, 1) == morton2::incY(m1));
-  assert(m1 - morton2(1, 0) == morton2::decX(m1));
-  assert(m1 - morton2(0, 1) == morton2::decY(m1));
+  assert(m1 + morton2(1, 0) == m1.incX());
+  assert(m1 + morton2(0, 1) == m1.incY());
+  assert(m1 - morton2(1, 0) == m1.decX());
+  assert(m1 - morton2(0, 1) == m1.decY());
 
   //Min & Max
   morton2 m4 = morton2(75, 15);
@@ -60,13 +76,32 @@ void test_morton3d()
 	uint32_t x, y, z;
 	x = 15; y = 79; z = 74;
 	morton3 m1 = morton3(x, y, z);
-
-  assert(morton3(0x1fffff, 0x1fffff, 0x1fffff) == morton3(0x7fffffffffffffff));
   
   //Decode
 	uint64_t x1, y1, z1;
 	m1.decode(x1, y1, z1);
 	assert(x1 == x && y1 == y && z1 == z);
+
+  //64 bits morton code
+  {
+    uint64_t x64, y64, z64;
+    morton3 m64 = morton3(0x7fffffffffffffff);
+    assert(morton3(0x1fffff, 0x1fffff, 0x1fffff) == m64);
+
+    
+    m64.decode(x64, y64, z64);
+    assert(x64 == 0x1fffff);
+    assert(y64 == 0x1fffff);
+    assert(z64 == 0x1fffff);
+
+    m64 = morton3(0x1249249249249249);
+    assert(morton3(0x1fffff, 0x0, 0x0) == m64);
+    m64.decode(x64, y64, z64);
+    assert(x64 == 0x1fffff);
+    assert(y64 == 0x0);
+    assert(z64 == 0x0);
+    
+  }
 
   //operator+
   auto m2 = m1 + morton3(4, 5, 6);
@@ -79,16 +114,16 @@ void test_morton3d()
   assert(m1 == m1 - morton3(0, 0, 0));
 
   //increments
-  assert(m1 == morton3::decX(morton3::incX(m1)));
-  assert(m1 == morton3::decY(morton3::incY(m1)));
-  assert(m1 == morton3::decZ(morton3::incZ(m1)));
+  assert(m1 == m1.incX().decX());
+  assert(m1 == m1.incY().decY());
+  assert(m1 == m1.incZ().decZ());
 
-  assert(m1 + morton3(1, 0, 0) == morton3::incX(m1));
-  assert(m1 + morton3(0, 1, 0) == morton3::incY(m1));
-  assert(m1 + morton3(0, 0, 1) == morton3::incZ(m1));
-  assert(m1 - morton3(1, 0, 0) == morton3::decX(m1));
-  assert(m1 - morton3(0, 1, 0) == morton3::decY(m1));
-  assert(m1 - morton3(0, 0, 1) == morton3::decZ(m1));
+  assert(m1 + morton3(1, 0, 0) == m1.incX());
+  assert(m1 + morton3(0, 1, 0) == m1.incY());
+  assert(m1 + morton3(0, 0, 1) == m1.incZ());
+  assert(m1 - morton3(1, 0, 0) == m1.decX());
+  assert(m1 - morton3(0, 1, 0) == m1.decY());
+  assert(m1 - morton3(0, 0, 1) == m1.decZ());
 
   //Min & Max
   morton3 m4 = morton3(75, 15, 16);

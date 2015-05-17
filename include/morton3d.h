@@ -7,6 +7,10 @@
 #include <immintrin.h>
 
 
+/*
+BMI2 (Bit Manipulation Instruction Set 2) is a special set of instructions available for intel core i5, i7 (since Haswell architecture) and Xeon E3.
+Some instructions are not available for Microsoft Visual Studio older than 2013.
+*/
 #define USE_BMI2
 
 #ifndef USE_BMI2
@@ -48,7 +52,6 @@ static const uint32_t morton3dLUT[256] =
 };
 #endif
 
-//Tesseral arithmetic
 const uint64_t x3_mask = 0x9249249249249249; // 0b...01001001
 const uint64_t y3_mask = 0x2492492492492492; // 0b...10010010
 const uint64_t z3_mask = 0x4924924924924924; // 0b...00100100
@@ -66,6 +69,8 @@ public:
 
 	inline morton3d(const T _key) : key(_key){};
 
+  /* If BMI2 intrinsics are not available, we rely on a look up table of precomputed morton codes. 
+  Ref : http://www.forceflow.be/2013/10/07/morton-encodingdecoding-through-bit-interleaving-implementations/ */
 	inline morton3d(const uint32_t x, const uint32_t y, const uint32_t z) : key(0){
 #ifdef USE_BMI2
 		key = _pdep_u64(z, z3_mask) | _pdep_u64(y, y3_mask) | _pdep_u64(x, x3_mask);
@@ -131,6 +136,10 @@ public:
 	}
 
 #ifndef USE_BMI2
+  /* Fast encode of morton3 code when BMI2 instructions aren't available.
+  This does not work for values greater than 256.
+  
+  This function takes roughly the same time as a full encode (64 bits) using BMI2 intrinsic.*/
 	static inline morton3d morton3d_256(const uint32_t x, const uint32_t y, const uint32_t z)
 	{
 		assert(x < 256 && y < 256 && z < 256);
@@ -141,42 +150,53 @@ public:
 	}
 #endif
 
-	static inline morton3d incX(const morton3d m1)
+  /* Increment X part of a morton3 code (xyz interleaving) 
+     morton3(4,5,6).incX() == morton3(5,5,6);
+     
+     Ref : http://bitmath.blogspot.fr/2012/11/tesseral-arithmetic-useful-snippets.html */
+	inline morton3d incX()
 	{
-		T x_sum = (m1.key | yz3_mask) + 1;
-		return (x_sum & x3_mask) | (m1.key & yz3_mask);
+		T x_sum = (this->key | yz3_mask) + 1;
+		return (x_sum & x3_mask) | (this->key & yz3_mask);
 	}
 
-	static inline morton3d incY(const morton3d m1)
+	inline morton3d incY()
 	{
-		T y_sum = (m1.key | xz3_mask) + 2;
-		return (y_sum & y3_mask) | (m1.key & xz3_mask);
+		T y_sum = (this->key | xz3_mask) + 2;
+		return (y_sum & y3_mask) | (this->key & xz3_mask);
 	}
 
-	static inline morton3d incZ(const morton3d m1)
+	inline morton3d incZ()
 	{
-		T z_sum = (m1.key | xy3_mask) + 4;
-		return (z_sum & z3_mask) | (m1.key & xy3_mask);
+		T z_sum = (this->key | xy3_mask) + 4;
+		return (z_sum & z3_mask) | (this->key & xy3_mask);
 	}
 
-	static inline morton3d decX(const morton3d m1)
+  /* Decrement X part of a morton3 code (xyz interleaving) 
+     morton3(4,5,6).decX() == morton3(3,5,6); */
+	inline morton3d decX()
 	{
-		T x_diff = (m1.key & x3_mask) - 1;
-		return (x_diff & x3_mask) | (m1.key & yz3_mask);
+		T x_diff = (this->key & x3_mask) - 1;
+		return (x_diff & x3_mask) | (this->key & yz3_mask);
 	}
 
-	static inline morton3d decY(const morton3d m1)
+	inline morton3d decY()
 	{
-		T y_diff = (m1.key & y3_mask) - 2;
-		return (y_diff & y3_mask) | (m1.key & xz3_mask);
+		T y_diff = (this->key & y3_mask) - 2;
+		return (y_diff & y3_mask) | (this->key & xz3_mask);
 	}
 
-	static inline morton3d decZ(const morton3d m1)
+	inline morton3d decZ()
 	{
-		T z_diff = (m1.key & z3_mask) - 4;
-		return (z_diff & z3_mask) | (m1.key & xy3_mask);
+		T z_diff = (this->key & z3_mask) - 4;
+		return (z_diff & z3_mask) | (this->key & xy3_mask);
 	}
 
+
+  /*
+    min(morton3(4,5,6), morton3(8,3,7)) == morton3(4,3,6);
+    Ref : http://asgerhoedt.dk/?p=276
+  */
   static inline morton3d min(const morton3d lhs, const morton3d rhs)
   {
     T lhsX = lhs.key & x3_mask;
@@ -188,6 +208,9 @@ public:
     return morton3d(std::min(lhsX, rhsX) + std::min(lhsY, rhsY) + std::min(lhsZ, rhsZ));
   }
 
+  /*
+    max(morton3(4,5,6), morton3(8,3,7)) == morton3(8,5,7);
+  */
   static inline morton3d max(const morton3d lhs, const morton3d rhs)
   {
     T lhsX = lhs.key & x3_mask;
@@ -200,20 +223,22 @@ public:
   }
 
 private:
+  //TODO : bugfix 64 bits
   inline uint64_t compactBits(uint64_t n) const
   {
-    n &= 0x9249249249249249;
-    n = (n ^ (n >> 2)) & 0x030c30c3030c30c3;
+    n &= 0x1249249249249249;
+    n = (n ^ (n >> 2)) & 0x30C30C30C30C30C3;
     n = (n ^ (n >> 4)) & 0xf00f00f00f00f00f;
     n = (n ^ (n >> 8)) & 0x00ff0000ff0000ff;
-    n = (n ^ (n >> 16)) & 0x7fffff;
+    n = (n ^ (n >> 16)) & 0x1fffff;
     return n;
   }
 
 };
 
 
-/* Add two morton keys (xyz interleaving) */
+/* Add two morton keys (xyz interleaving) 
+  morton3(4,5,6) + morton3(1,2,3) == morton3(5,7,9);*/
 template<class T>
 inline morton3d<T> operator+(const morton3d<T> m1, const morton3d<T> m2)
 {
@@ -223,7 +248,8 @@ inline morton3d<T> operator+(const morton3d<T> m1, const morton3d<T> m2)
 	return morton3d<T>((x_sum & x3_mask) | (y_sum & y3_mask) | (z_sum & z3_mask));
 }
 
-/* Substract two morton keys (xyz interleaving) */
+/* Substract two morton keys (xyz interleaving) 
+   morton3(4,5,6) - morton3(1,2,3) == morton3(3,3,3);*/
 template<class T>
 inline morton3d<T> operator-(const morton3d<T> m1, const morton3d<T> m2)
 {

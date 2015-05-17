@@ -7,6 +7,10 @@
 #include <assert.h>
 #include <immintrin.h>
 
+/*
+BMI2(Bit Manipulation Instruction Set 2) is a special set of instructions available for intel core i5, i7(since Haswell architecture) and Xeon E3.
+Some instructions are not available for Microsoft Visual Studio older than 2013.
+*/
 #define USE_BMI2
 
 #ifndef USE_BMI2
@@ -47,8 +51,8 @@ static const uint32_t morton2dLUT[256] =
 };
 #endif
 
-const uint64_t x2_mask = 0x55555555; //0b...01010101
-const uint64_t y2_mask = 0xAAAAAAAA; //0b...10101010
+const uint64_t x2_mask = 0x5555555555555555; //0b...01010101
+const uint64_t y2_mask = 0xAAAAAAAAAAAAAAAA; //0b...10101010
 
 template<class T = uint64_t>
 struct morton2d
@@ -61,6 +65,7 @@ public:
 	morton2d() : key(0){};
 	morton2d(T _key) : key(_key){};
 
+  /* If BMI2 intrinsics are not available, we rely on a look up table of precomputed morton codes. */
 	inline morton2d(const uint32_t x, const uint32_t y) : key(0){
 
 #ifdef USE_BMI2
@@ -122,31 +127,38 @@ public:
 		return this->key << (2 * d);
 	}
 
-  //Increments
-  static inline morton2d incX(morton2d m1)
+  /* Increment X part of a morton2 code (xy interleaving)
+  morton2(4,5).incX() == morton2(5,5);
+
+  Ref : http://bitmath.blogspot.fr/2012/11/tesseral-arithmetic-useful-snippets.html */
+  inline morton2d incX()
   {
-    T x_sum = (m1.key | y2_mask) + 1;
-    return (x_sum & x2_mask) | (m1.key & y2_mask);
+    T x_sum = (this->key | y2_mask) + 1;
+    return (x_sum & x2_mask) | (this->key & y2_mask);
   }
 
-  static inline morton2d incY(morton2d m1)
+  inline morton2d incY()
   {
-    T y_sum = (m1.key | x2_mask) + 2;
-    return (y_sum & y2_mask) | (m1.key & x2_mask);
-}
-
-  static inline morton2d decX(morton2d m1)
-  {
-    T x_diff = (m1.key & x2_mask) - 1;
-    return (x_diff & x2_mask) | (m1.key & y2_mask);
+    T y_sum = (this->key | x2_mask) + 2;
+    return (y_sum & y2_mask) | (this->key & x2_mask);
   }
 
-  static inline morton2d decY(morton2d m1)
+  inline morton2d decX()
   {
-    T y_diff = (m1.key & y2_mask) - 2;
-    return (y_diff & y2_mask) | (m1.key & x2_mask);
+    T x_diff = (this->key & x2_mask) - 1;
+    return (x_diff & x2_mask) | (this->key & y2_mask);
   }
 
+  inline morton2d decY()
+  {
+    T y_diff = (this->key & y2_mask) - 2;
+    return (y_diff & y2_mask) | (this->key & x2_mask);
+  }
+
+  /*
+    min(morton2(4,5), morton2(8,3)) == morton2(4,3);
+    Ref : http://asgerhoedt.dk/?p=276
+  */
   static inline morton2d min(const morton2d lhs, const morton2d rhs)
   {
     T lhsX = lhs.key & x2_mask;
@@ -156,6 +168,9 @@ public:
     return morton2d(std::min(lhsX, rhsX) + std::min(lhsY, rhsY));
   }
 
+  /*
+    max(morton2(4,5), morton2(8,3)) == morton2(8,5);
+  */
   static inline morton2d max(const morton2d lhs, const morton2d rhs) 
   {
     T lhsX = lhs.key & x2_mask;
@@ -166,6 +181,11 @@ public:
   }
 
 #ifndef USE_BMI2
+
+  /* Fast encode of morton2 code when BMI2 instructions aren't available.
+  This does not work for values greater than 256.
+
+  This function takes roughly the same time as a full encode (64 bits) using BMI2 intrinsic.*/
 	static inline morton2d morton2d_256(const uint32_t x, const uint32_t y)
 	{
 		assert(x < 256 && y < 256);
@@ -175,21 +195,22 @@ public:
 	}
 
 private:
-  //TODO : convert to x64
   inline uint64_t compactBits(uint64_t n) const
   {
-    n &= 0x55555555;
-    n = (n ^ (n >> 1)) & 0x33333333;
-    n = (n ^ (n >> 2)) & 0x0f0f0f0f;
-    n = (n ^ (n >> 4)) & 0x00ff00ff;
-    n = (n ^ (n >> 8)) & 0x0000ffff;
+    n &= 0x5555555555555555;
+    n = (n ^ (n >> 1)) & 0x3333333333333333;
+    n = (n ^ (n >> 2)) & 0x0f0f0f0f0f0f0f0f;
+    n = (n ^ (n >> 4)) & 0x00ff00ff00ff00ff;
+    n = (n ^ (n >> 8)) & 0x0000ffff0000ffff;
+    n = (n ^ (n >> 16)) & 0x00000000ffffffff;
     return n;
   }
 #endif
 
 };
 
-/* Add two morton keys (xy interleaving) */
+/* Add two morton keys (xy interleaving) 
+morton2(4,5) + morton3(1,2) == morton2(5,7); */
 template<class T>
 inline morton2d<T> operator+(const morton2d<T> lhs, const morton2d<T> rhs)
 {
@@ -198,7 +219,8 @@ inline morton2d<T> operator+(const morton2d<T> lhs, const morton2d<T> rhs)
 	return (x_sum & x2_mask) | (y_sum & y2_mask);
 }
 
-/* Substract two mortons keys (xy interleaving) */
+/* Substract two mortons keys (xy interleaving) 
+  morton2(4,5) - morton2(1,2) == morton2(3,3); */
 template<class T>
 inline morton2d<T> operator-(const morton2d<T> lhs, const morton2d<T> rhs)
 {
