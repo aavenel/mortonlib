@@ -43,10 +43,18 @@ void test_morton2d()
   assert(m2 == morton2(x + 4, y + 5));
   assert(m1 == m1 + morton2(0, 0));
 
+  auto m2a = m2;
+  m2a += morton2(0, 0);
+  assert(m2a == m2);
+
   //operator-
   auto m3 = m1 - morton2(4, 5);
   assert(m3 == morton2(x - 4, y - 5));
   assert(m1 == m1 - morton2(0, 0));
+
+  auto m3a = m2;
+  m3a -= morton2(0, 0);
+  assert(m3a == m2);
 
   //increments
   assert(m1 == m1.incX().decX());
@@ -108,10 +116,19 @@ void test_morton3d()
   assert(m2 == morton3(x + 4, y + 5, z + 6));
   assert(m1 == m1 + morton3(0, 0, 0));
 
+  auto m2a = m2;
+  m2a += morton3(0, 0, 0);
+  assert(m2a == m2);
+
+
   //operator-
   auto m3 = m1 - morton3(4, 5, 6);
   assert(m3 == morton3(x - 4, y - 5, z - 6));
   assert(m1 == m1 - morton3(0, 0, 0));
+
+  auto m3a = m3;
+  m3a -= morton3(0, 0, 0);
+  assert(m3a == m3);
 
   //increments
   assert(m1 == m1.incX().decX());

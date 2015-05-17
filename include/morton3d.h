@@ -135,6 +135,22 @@ public:
 		return this->key << (3 * d);
 	}
 
+  inline void operator+=(const morton3d<T> m1)
+  {
+    T x_sum = (this->key | yz3_mask) + (m1.key & x3_mask);
+    T y_sum = (this->key | xz3_mask) + (m1.key & y3_mask);
+    T z_sum = (this->key | xy3_mask) + (m1.key & z3_mask);
+    this->key = ((x_sum & x3_mask) | (y_sum & y3_mask) | (z_sum & z3_mask));
+  }
+
+  inline void operator-=(const morton3d<T> m1)
+  {
+    T x_diff = (this->key & x3_mask) - (m1.key & x3_mask);
+    T y_diff = (this->key & y3_mask) - (m1.key & y3_mask);
+    T z_diff = (this->key & z3_mask) - (m1.key & z3_mask);
+   this->key = ((x_diff & x3_mask) | (y_diff & y3_mask) | (z_diff & z3_mask));
+  }
+
 #ifndef USE_BMI2
   /* Fast encode of morton3 code when BMI2 instructions aren't available.
   This does not work for values greater than 256.

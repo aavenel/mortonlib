@@ -127,6 +127,20 @@ public:
 		return this->key << (2 * d);
 	}
 
+  inline void operator+=(const morton2d<T> rhs)
+  {
+    T x_sum = (this->key | y2_mask) + (rhs.key & x2_mask);
+    T y_sum = (this->key | x2_mask) + (rhs.key & y2_mask);
+    this->key = (x_sum & x2_mask) | (y_sum & y2_mask);
+  }
+
+  inline void operator-=(const morton2d<T> rhs)
+  {
+    T x_diff = (this->key & x2_mask) - (rhs.key & x2_mask);
+    T y_diff = (this->key & y2_mask) - (rhs.key & y2_mask);
+    this->key = (x_diff & x2_mask) | (y_diff & y2_mask);
+  }
+
   /* Increment X part of a morton2 code (xy interleaving)
   morton2(4,5).incX() == morton2(5,5);
 
