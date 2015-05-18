@@ -243,10 +243,11 @@ private:
   inline uint64_t compactBits(uint64_t n) const
   {
     n &= 0x1249249249249249;
-    n = (n ^ (n >> 2)) & 0x30C30C30C30C30C3;
-    n = (n ^ (n >> 4)) & 0xf00f00f00f00f00f;
-    n = (n ^ (n >> 8)) & 0x00ff0000ff0000ff;
-    n = (n ^ (n >> 16)) & 0x1fffff;
+    n = (n ^ (n >> 2))  & 0x30c30c30c30c30c3;
+    n = (n ^ (n >> 4))  & 0xf00f00f00f00f00f;
+    n = (n ^ (n >> 8))  & 0x00ff0000ff0000ff;
+    n = (n ^ (n >> 16)) & 0x00ff00000000ffff;
+    n = (n ^ (n >> 32)) & 0x1fffff;
     return n;
   }
 
