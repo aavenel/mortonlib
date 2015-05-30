@@ -107,6 +107,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -118,9 +120,11 @@
     <ClInclude Include="..\include\morton2d.h" />
     <ClInclude Include="..\include\morton3d.h" />
     <ClInclude Include="..\include\tesseral.h" />
+    <ClInclude Include="..\tests\benchmark.h" />
+    <ClInclude Include="..\tests\grids.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\tests\mortonlib.cpp" />
+    <ClCompile Include="..\tests\tests.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
