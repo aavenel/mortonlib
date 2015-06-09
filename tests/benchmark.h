@@ -36,7 +36,7 @@ public:
 
 void benchmark2d()
 {
-  const int gridsize = 128;
+  const int gridsize = 512;
   typedef int gridType;
   Grid2d<gridType> g = Grid2d<gridType>(gridsize);
   MortonGrid2d<gridType> gm = MortonGrid2d<gridType>(gridsize);
@@ -208,7 +208,7 @@ void benchmark2d()
 
 void benchmark3d()
 { 
-  const int gridsize = 128;
+  const int gridsize = 512;
   typedef int gridType;
   Grid3d<gridType> g = Grid3d<gridType>(gridsize);
   MortonGrid3d<gridType> gm = MortonGrid3d<gridType>(gridsize);
@@ -344,10 +344,26 @@ void benchmark3d()
     y = random_pool[i * 3 + 1];
     z = random_pool[i * 3 + 2];
 
+    /*
     for (int xx = -1; xx < 2; ++xx)
       for (int yy = -1; yy < 2; ++yy)
         for (int zz = -1; zz < 2; ++zz)
           r = g.get(x+xx, y+yy, z+zz);
+    */
+    int xkey, ykey, zkey;
+    for (int xx = -1; xx < 2; ++xx)
+    {
+      xkey = (x + xx) * gridsize*gridsize;
+      for (int yy = -1; yy < 2; ++yy)
+      {
+        ykey = xkey + (y + yy) * gridsize;
+        for (int zz = -1; zz < 2; ++zz)
+        {
+          zkey = ykey + (z + zz);
+          r = g.get(zkey);
+        }
+      }
+    }
 
   }
   ENDPROFILE
@@ -381,17 +397,20 @@ void benchmark3d()
     //Neighbors
 
     //X-1
-    r = gm.get(mkey.decX());
-    r = gm.get(mkey.decX().decZ());
-    r = gm.get(mkey.decX().incZ());
+    auto dxkey = mkey.decX();
+    r = gm.get(dxkey);
+    r = gm.get(dxkey.decZ());
+    r = gm.get(dxkey.incZ());
 
-    r = gm.get(mkey.decX().decY());
-    r = gm.get(mkey.decX().decY().decZ());
-    r = gm.get(mkey.decX().decY().incZ());
+    auto dxdykey = dxkey.decY();
+    r = gm.get(dxdykey);
+    r = gm.get(dxdykey.decZ());
+    r = gm.get(dxdykey.incZ());
 
-    r = gm.get(mkey.decX().incY());
-    r = gm.get(mkey.decX().incY().decZ());
-    r = gm.get(mkey.decX().incY().incZ());
+    auto dxiykey = dxkey.incY();
+    r = gm.get(dxiykey);
+    r = gm.get(dxiykey.decZ());
+    r = gm.get(dxiykey.incZ());
 
     //X
     r = gm.get(mkey);
@@ -407,17 +426,18 @@ void benchmark3d()
     r = gm.get(mkey.incY().incZ());
 
     //X+1
-    r = gm.get(mkey.incX());
-    r = gm.get(mkey.incX().decZ());
-    r = gm.get(mkey.incX().incZ());
+    auto ixkey = mkey.incX();
+    r = gm.get(ixkey);
+    r = gm.get(ixkey.decZ());
+    r = gm.get(ixkey.incZ());
 
-    r = gm.get(mkey.incX().decY());
-    r = gm.get(mkey.incX().decY().decZ());
-    r = gm.get(mkey.incX().decY().incZ());
+    r = gm.get(ixkey.decY());
+    r = gm.get(ixkey.decY().decZ());
+    r = gm.get(ixkey.decY().incZ());
 
-    r = gm.get(mkey.incX().incY());
-    r = gm.get(mkey.incX().incY().decZ());
-    r = gm.get(mkey.incX().incY().incZ());
+    r = gm.get(ixkey.incY());
+    r = gm.get(ixkey.incY().decZ());
+    r = gm.get(ixkey.incY().incZ());
 
   }
   ENDPROFILE
