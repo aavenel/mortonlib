@@ -170,41 +170,41 @@ public:
      morton3(4,5,6).incX() == morton3(5,5,6);
      
      Ref : http://bitmath.blogspot.fr/2012/11/tesseral-arithmetic-useful-snippets.html */
-	inline morton3d incX()
+	inline morton3d incX() const
 	{
-		T x_sum = (this->key | yz3_mask) + 1;
+		const T x_sum = (this->key | yz3_mask) + 1;
 		return (x_sum & x3_mask) | (this->key & yz3_mask);
 	}
 
-	inline morton3d incY()
+	inline morton3d incY() const
 	{
-		T y_sum = (this->key | xz3_mask) + 2;
+		const T y_sum = (this->key | xz3_mask) + 2;
 		return (y_sum & y3_mask) | (this->key & xz3_mask);
 	}
 
-	inline morton3d incZ()
+  inline morton3d incZ() const
 	{
-		T z_sum = (this->key | xy3_mask) + 4;
+    const T z_sum = (this->key | xy3_mask) + 4;
 		return (z_sum & z3_mask) | (this->key & xy3_mask);
 	}
 
   /* Decrement X part of a morton3 code (xyz interleaving) 
      morton3(4,5,6).decX() == morton3(3,5,6); */
-	inline morton3d decX()
+  inline morton3d decX() const
 	{
-		T x_diff = (this->key & x3_mask) - 1;
+    const T x_diff = (this->key & x3_mask) - 1;
 		return (x_diff & x3_mask) | (this->key & yz3_mask);
 	}
 
-	inline morton3d decY()
+  inline morton3d decY() const
 	{
-		T y_diff = (this->key & y3_mask) - 2;
+    const T y_diff = (this->key & y3_mask) - 2;
 		return (y_diff & y3_mask) | (this->key & xz3_mask);
 	}
 
-	inline morton3d decZ()
+  inline morton3d decZ() const
 	{
-		T z_diff = (this->key & z3_mask) - 4;
+    const T z_diff = (this->key & z3_mask) - 4;
 		return (z_diff & z3_mask) | (this->key & xy3_mask);
 	}
 
@@ -239,7 +239,6 @@ public:
   }
 
 private:
-  //TODO : bugfix 64 bits
   inline uint64_t compactBits(uint64_t n) const
   {
     n &= 0x1249249249249249;

@@ -145,27 +145,27 @@ public:
   morton2(4,5).incX() == morton2(5,5);
 
   Ref : http://bitmath.blogspot.fr/2012/11/tesseral-arithmetic-useful-snippets.html */
-  inline morton2d incX()
+  inline morton2d incX() const
   {
-    T x_sum = (this->key | y2_mask) + 1;
+    const T x_sum = (this->key | y2_mask) + 1;
     return (x_sum & x2_mask) | (this->key & y2_mask);
   }
 
-  inline morton2d incY()
+  inline morton2d incY() const
   {
-    T y_sum = (this->key | x2_mask) + 2;
+    const T y_sum = (this->key | x2_mask) + 2;
     return (y_sum & y2_mask) | (this->key & x2_mask);
   }
 
-  inline morton2d decX()
+  inline morton2d decX() const
   {
-    T x_diff = (this->key & x2_mask) - 1;
+    const T x_diff = (this->key & x2_mask) - 1;
     return (x_diff & x2_mask) | (this->key & y2_mask);
   }
 
-  inline morton2d decY()
+  inline morton2d decY() const
   {
-    T y_diff = (this->key & y2_mask) - 2;
+    const T y_diff = (this->key & y2_mask) - 2;
     return (y_diff & y2_mask) | (this->key & x2_mask);
   }
 
