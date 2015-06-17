@@ -33,10 +33,10 @@ void test_morton2d()
     assert(y64 == 0xffffffff);
 
     m64 = morton2(0xaaaaaaaaaaaaaaaa);
-    assert(morton2(0x0, 0xffffffff) == m64);
+    assert(morton2(0xffffffff, 0x0) == m64);
     m64.decode(x64, y64);
-    assert(x64 == 0x0);
-    assert(y64 == 0xffffffff);
+    assert(x64 == 0xffffffff);
+    assert(y64 == 0x0);
   }
 
   //operator+
@@ -73,8 +73,8 @@ void test_morton2d()
   assert(morton2::max(m4, m5) == morton2(75, 79));
 
   //Comp
-  assert(m4 < m5);
-  assert(m5 > m4);
+  assert(m4 > m5);
+  assert(m5 < m4);
 
 }
 
@@ -104,11 +104,11 @@ void test_morton3d()
     assert(z64 == 0x1fffff);
 
     m64 = morton3(0x1249249249249249);
-    assert(morton3(0x1fffff, 0x0, 0x0) == m64);
+    assert(morton3(0x0, 0x0, 0x1fffff) == m64);
     m64.decode(x64, y64, z64);
-    assert(x64 == 0x1fffff);
+    assert(x64 == 0x0);
     assert(y64 == 0x0);
-    assert(z64 == 0x0);
+    assert(z64 == 0x1fffff);
     
   }
 
@@ -150,8 +150,8 @@ void test_morton3d()
   assert(morton3::max(m4, m5) == morton3(75, 79, 26));
 
   //Comp
-  assert(m4 < m5);
-  assert(m5 > m4);
+  assert(m5 < m4);
+  assert(m4 > m5);
 
 }
 

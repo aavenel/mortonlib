@@ -52,9 +52,9 @@ static const uint32_t morton3dLUT[256] =
 };
 #endif
 
-const uint64_t x3_mask = 0x9249249249249249; // 0b...01001001
+const uint64_t x3_mask = 0x4924924924924924; // 0b...00100100
 const uint64_t y3_mask = 0x2492492492492492; // 0b...10010010
-const uint64_t z3_mask = 0x4924924924924924; // 0b...00100100
+const uint64_t z3_mask = 0x9249249249249249; // 0b...01001001
 const uint64_t xy3_mask = x3_mask | y3_mask;
 const uint64_t xz3_mask = x3_mask | z3_mask;
 const uint64_t yz3_mask = y3_mask | z3_mask;
@@ -75,17 +75,17 @@ public:
 #ifdef USE_BMI2
 		key = _pdep_u64(z, z3_mask) | _pdep_u64(y, y3_mask) | _pdep_u64(x, x3_mask);
 #else
-		key = morton3dLUT[(z >> 16) & 0xFF] << 2 |
+		key = morton3dLUT[(x >> 16) & 0xFF] << 2 |
 			morton3dLUT[(y >> 16) & 0xFF] << 1 |
-			morton3dLUT[(x >> 16) & 0xFF];
+			morton3dLUT[(z >> 16) & 0xFF];
 		key = key << 24 |
-			morton3dLUT[(z >> 8) & 0xFF] << 2 |
+			morton3dLUT[(x >> 8) & 0xFF] << 2 |
 			morton3dLUT[(y >> 8) & 0xFF] << 1 |
-			morton3dLUT[(x >> 8) & 0xFF];
+			morton3dLUT[(z >> 8) & 0xFF];
 		key = key << 24 |
-			morton3dLUT[z & 0xFF] << 2 |
+			morton3dLUT[x & 0xFF] << 2 |
 			morton3dLUT[y & 0xFF] << 1 |
-			morton3dLUT[x & 0xFF];
+			morton3dLUT[z & 0xFF];
 #endif
 	}
 
@@ -96,9 +96,9 @@ public:
     y = _pext_u64(this->key, y3_mask);
     z = _pext_u64(this->key, z3_mask);
 #else
-    x = compactBits(this->key);
+    x = compactBits(this->key >> 2);
     y = compactBits(this->key >> 1);
-    z = compactBits(this->key >> 2);
+    z = compactBits(this->key);
 #endif
   }
 
@@ -159,9 +159,9 @@ public:
 	static inline morton3d morton3d_256(const uint32_t x, const uint32_t y, const uint32_t z)
 	{
 		assert(x < 256 && y < 256 && z < 256);
-		uint64_t key = morton3dLUT[z] << 2 |
+		uint64_t key = morton3dLUT[x] << 2 |
 			morton3dLUT[y] << 1 |
-			morton3dLUT[x];
+			morton3dLUT[z];
 		return morton3d(key);
 	}
 #endif
@@ -172,7 +172,7 @@ public:
      Ref : http://bitmath.blogspot.fr/2012/11/tesseral-arithmetic-useful-snippets.html */
 	inline morton3d incX() const
 	{
-		const T x_sum = (this->key | yz3_mask) + 1;
+		const T x_sum = (this->key | yz3_mask) + 4;
 		return (x_sum & x3_mask) | (this->key & yz3_mask);
 	}
 
@@ -184,7 +184,7 @@ public:
 
   inline morton3d incZ() const
 	{
-    const T z_sum = (this->key | xy3_mask) + 4;
+    const T z_sum = (this->key | xy3_mask) + 1;
 		return (z_sum & z3_mask) | (this->key & xy3_mask);
 	}
 
@@ -192,7 +192,7 @@ public:
      morton3(4,5,6).decX() == morton3(3,5,6); */
   inline morton3d decX() const
 	{
-    const T x_diff = (this->key & x3_mask) - 1;
+    const T x_diff = (this->key & x3_mask) - 4;
 		return (x_diff & x3_mask) | (this->key & yz3_mask);
 	}
 
@@ -204,7 +204,7 @@ public:
 
   inline morton3d decZ() const
 	{
-    const T z_diff = (this->key & z3_mask) - 4;
+    const T z_diff = (this->key & z3_mask) - 1;
 		return (z_diff & z3_mask) | (this->key & xy3_mask);
 	}
 

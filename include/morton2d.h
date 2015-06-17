@@ -51,8 +51,8 @@ static const uint32_t morton2dLUT[256] =
 };
 #endif
 
-const uint64_t x2_mask = 0x5555555555555555; //0b...01010101
-const uint64_t y2_mask = 0xAAAAAAAAAAAAAAAA; //0b...10101010
+const uint64_t x2_mask = 0xAAAAAAAAAAAAAAAA; //0b...10101010
+const uint64_t y2_mask = 0x5555555555555555; //0b...01010101
 
 template<class T = uint64_t>
 struct morton2d
@@ -71,17 +71,17 @@ public:
 #ifdef USE_BMI2
 		key = _pdep_u64(y, y2_mask) | _pdep_u64(x, x2_mask);
 #else
-    key = morton2dLUT[(y >> 24) & 0xFF] << 1 |
-      morton2dLUT[(x >> 24) & 0xFF];
+    key = morton2dLUT[(x >> 24) & 0xFF] << 1 |
+      morton2dLUT[(y >> 24) & 0xFF];
     key = key << 16 |
-		  morton2dLUT[(y >> 16) & 0xFF] << 1 |
-			morton2dLUT[(x >> 16) & 0xFF];
+		  morton2dLUT[(x >> 16) & 0xFF] << 1 |
+			morton2dLUT[(y >> 16) & 0xFF];
 		key = key << 16 |
-			morton2dLUT[(y >> 8) & 0xFF] << 1 |
-			morton2dLUT[(x >> 8) & 0xFF];
+			morton2dLUT[(x >> 8) & 0xFF] << 1 |
+			morton2dLUT[(y >> 8) & 0xFF];
 		key = key << 16 |
-		  morton2dLUT[y & 0xFF] << 1 |
-		  morton2dLUT[x & 0xFF];
+		  morton2dLUT[x & 0xFF] << 1 |
+		  morton2dLUT[y & 0xFF];
 #endif
 	}
 
@@ -91,8 +91,8 @@ public:
 		x = _pext_u64(this->key, x2_mask);
 		y = _pext_u64(this->key, y2_mask);
 #else
-    x = compactBits(this->key);
-    y = compactBits(this->key >> 1);
+    x = compactBits(this->key >> 1);
+    y = compactBits(this->key);
 #endif
 	}
 
@@ -147,25 +147,25 @@ public:
   Ref : http://bitmath.blogspot.fr/2012/11/tesseral-arithmetic-useful-snippets.html */
   inline morton2d incX() const
   {
-    const T x_sum = (this->key | y2_mask) + 1;
+    const T x_sum = (this->key | y2_mask) + 2;
     return (x_sum & x2_mask) | (this->key & y2_mask);
   }
 
   inline morton2d incY() const
   {
-    const T y_sum = (this->key | x2_mask) + 2;
+    const T y_sum = (this->key | x2_mask) + 1;
     return (y_sum & y2_mask) | (this->key & x2_mask);
   }
 
   inline morton2d decX() const
   {
-    const T x_diff = (this->key & x2_mask) - 1;
+    const T x_diff = (this->key & x2_mask) - 2;
     return (x_diff & x2_mask) | (this->key & y2_mask);
   }
 
   inline morton2d decY() const
   {
-    const T y_diff = (this->key & y2_mask) - 2;
+    const T y_diff = (this->key & y2_mask) - 1;
     return (y_diff & y2_mask) | (this->key & x2_mask);
   }
 
@@ -203,8 +203,8 @@ public:
 	static inline morton2d morton2d_256(const uint32_t x, const uint32_t y)
 	{
 		assert(x < 256 && y < 256);
-		T key = morton2dLUT[y] << 1 |
-			      morton2dLUT[x];
+		T key = morton2dLUT[x] << 1 |
+			      morton2dLUT[y];
 		return morton2d(key);
 	}
 
