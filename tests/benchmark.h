@@ -36,7 +36,7 @@ public:
 
 void benchmark2d()
 {
-  const int gridsize = 512;
+  const int gridsize = 1024;
   typedef int gridType;
   Grid2d<gridType> g = Grid2d<gridType>(gridsize);
   MortonGrid2d<gridType> gm = MortonGrid2d<gridType>(gridsize);
@@ -55,8 +55,8 @@ void benchmark2d()
   for (int i = 0; i < gridsize; ++i)
     for (int j = 0; j < gridsize; ++j)
     {
-      //YX convention for morton code, so (j,i) to iterate in a cache friendly way
-      r = gm.get(j, i);
+      //XY convention for morton code, so (j,i) to iterate in a cache friendly way
+      r = gm.get(i, j);
     }
   ENDPROFILE
 
@@ -104,7 +104,7 @@ void benchmark2d()
   {
     for (int j = 0; j < gridsize; ++j)
     {
-      r = gm.get(i, j);
+      r = gm.get(j, i);
     }
   }
   ENDPROFILE
@@ -208,7 +208,7 @@ void benchmark2d()
 
 void benchmark3d()
 { 
-  const int gridsize = 512;
+  const int gridsize = 256;
   typedef int gridType;
   Grid3d<gridType> g = Grid3d<gridType>(gridsize);
   MortonGrid3d<gridType> gm = MortonGrid3d<gridType>(gridsize);
@@ -229,8 +229,8 @@ void benchmark3d()
     for (int j = 0; j < gridsize; ++j)
       for (int k = 0; k < gridsize; ++k)
       {
-        //ZYX convention for morton code, so (k,j,i) to iterate in a cache friendly way
-        r = gm.get(k, j, i);
+        //XYZ convention for morton code, so (i,j,z) to iterate in a cache friendly way
+        r = gm.get(i, j, k);
       }
   ENDPROFILE
 
@@ -285,7 +285,7 @@ void benchmark3d()
     {
       for (int k = 0; k < gridsize; ++k)
       {
-        r = gm.get(i, j, k);
+        r = gm.get(k, j, i);
       }
     }
   }
