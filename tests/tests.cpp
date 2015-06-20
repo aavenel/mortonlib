@@ -76,6 +76,11 @@ void test_morton2d()
   assert(m4 > m5);
   assert(m5 < m4);
 
+  //16 bits morton code
+  morton2d<uint16_t> m16 = morton2d<uint16_t>(0, 0);
+  assert(m16.incX().incY() == morton2d<uint16_t>(1, 1));
+  assert(morton2d<uint16_t>(1, 1).decX().decY() == morton2d<uint16_t>(0, 0));
+
 }
 
 void test_morton3d()
@@ -152,6 +157,11 @@ void test_morton3d()
   //Comp
   assert(m5 < m4);
   assert(m4 > m5);
+
+  //16 bits morton code
+  morton3d<uint16_t> m16 = morton3d<uint16_t>(0, 0, 0);
+  assert(m16.incX().incY().incZ() == morton3d<uint16_t>(1, 1, 1));
+  assert(morton3d<uint16_t>(1, 1, 1).decX().decY().decZ() == morton3d<uint16_t>(0, 0, 0));
 
 }
 

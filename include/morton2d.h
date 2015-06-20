@@ -86,14 +86,13 @@ public:
 
 public:
 
-	morton2d() : key(0){};
-	morton2d(T _key) : key(_key){};
+	explicit morton2d(T _key) : key(_key){};
 
   /* If BMI2 intrinsics are not available, we rely on a look up table of precomputed morton codes. */
 	inline morton2d(const uint32_t x, const uint32_t y) : key(0){
 
 #ifdef USE_BMI2
-		key = _pdep_u64(y, y2_mask) | _pdep_u64(x, x2_mask);
+		key = static_cast<T>(_pdep_u64(y, y2_mask) | _pdep_u64(x, x2_mask));
 #else
     key = morton2dLUT[(x >> 24) & 0xFF] << 1 |
       morton2dLUT[(y >> 24) & 0xFF];
@@ -171,26 +170,26 @@ public:
   Ref : http://bitmath.blogspot.fr/2012/11/tesseral-arithmetic-useful-snippets.html */
   inline morton2d incX() const
   {
-    const T x_sum = (this->key | y2_mask) + 2;
-    return (x_sum & x2_mask) | (this->key & y2_mask);
+    const T x_sum = static_cast<T>((this->key | y2_mask) + 2);
+    return morton2d<T>((x_sum & x2_mask) | (this->key & y2_mask));
   }
 
   inline morton2d incY() const
   {
-    const T y_sum = (this->key | x2_mask) + 1;
-    return (y_sum & y2_mask) | (this->key & x2_mask);
+    const T y_sum = static_cast<T>((this->key | x2_mask) + 1);
+    return morton2d<T>((y_sum & y2_mask) | (this->key & x2_mask));
   }
 
   inline morton2d decX() const
   {
-    const T x_diff = (this->key & x2_mask) - 2;
-    return (x_diff & x2_mask) | (this->key & y2_mask);
+    const T x_diff = static_cast<T>((this->key & x2_mask) - 2);
+    return morton2d<T>((x_diff & x2_mask) | (this->key & y2_mask));
   }
 
   inline morton2d decY() const
   {
-    const T y_diff = (this->key & y2_mask) - 1;
-    return (y_diff & y2_mask) | (this->key & x2_mask);
+    const T y_diff = static_cast<T>((this->key & y2_mask) - 1);
+    return morton2d<T>((y_diff & y2_mask) | (this->key & x2_mask));
   }
 
   /*
@@ -203,7 +202,7 @@ public:
     T rhsX = rhs.key & x2_mask;
     T lhsY = lhs.key & y2_mask;
     T rhsY = rhs.key & y2_mask;
-    return morton2d(std::min(lhsX, rhsX) + std::min(lhsY, rhsY));
+    return morton2d<T>(std::min(lhsX, rhsX) + std::min(lhsY, rhsY));
   }
 
   /*
@@ -215,7 +214,7 @@ public:
     T rhsX = rhs.key & x2_mask;
     T lhsY = lhs.key & y2_mask;
     T rhsY = rhs.key & y2_mask;
-    return morton2d(std::max(lhsX, rhsX) + std::max(lhsY, rhsY));
+    return morton2d<T>(std::max(lhsX, rhsX) + std::max(lhsY, rhsY));
   }
 
 #ifndef USE_BMI2
@@ -254,7 +253,7 @@ inline morton2d<T> operator+(const morton2d<T> lhs, const morton2d<T> rhs)
 {
   T x_sum = (lhs.key | y2_mask) + (rhs.key & x2_mask);
   T y_sum = (lhs.key | x2_mask) + (rhs.key & y2_mask);
-	return (x_sum & x2_mask) | (y_sum & y2_mask);
+	return morton2d<T>((x_sum & x2_mask) | (y_sum & y2_mask));
 }
 
 /* Substract two mortons keys (xy interleaving) 
@@ -264,7 +263,7 @@ inline morton2d<T> operator-(const morton2d<T> lhs, const morton2d<T> rhs)
 {
   T x_diff = (lhs.key & x2_mask) - (rhs.key & x2_mask);
   T y_diff = (lhs.key & y2_mask) - (rhs.key & y2_mask);
-	return (x_diff & x2_mask) | (y_diff & y2_mask);
+	return morton2d<T>((x_diff & x2_mask) | (y_diff & y2_mask));
 }
 
 template<class T>
