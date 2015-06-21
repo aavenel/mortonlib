@@ -36,8 +36,8 @@ public:
 
 void benchmark2d()
 {
-  const int gridsize = 1024;
-  typedef int gridType;
+  const int gridsize = 2048;
+  typedef uint64_t gridType;
   Grid2d<gridType> g = Grid2d<gridType>(gridsize);
   MortonGrid2d<gridType> gm = MortonGrid2d<gridType>(gridsize);
 
@@ -199,6 +199,37 @@ void benchmark2d()
     r = gm.get(mkey.incX());
     r = gm.get(mkey.incX().decY());
     r = gm.get(mkey.incX().incY());
+
+  }
+  ENDPROFILE
+
+  BEGINPROFILE("Morton  2d grid get() random + 8 neighbors C")
+  volatile gridType r;
+  int x, y;
+  for (int i = 0; i < gridsize * gridsize; i++)
+  {
+    x = random_pool[i * 2];
+    y = random_pool[i * 2 + 1];
+
+    //Neighbors
+    uint64_t xpart = _pdep_u64(x, x2_mask);
+    uint64_t ypart = _pdep_u64(y, y2_mask);
+
+    uint64_t ixpart = ((xpart | y2_mask) + 2) & x2_mask;
+    uint64_t iypart = ((ypart | x2_mask) + 1) & y2_mask;
+
+    uint64_t dxpart = (xpart - 2) & x2_mask;
+    uint64_t dypart = (ypart - 1) & y2_mask;
+
+    r = gm.get(morton2(dxpart | dypart));
+    r = gm.get(morton2(xpart  | dypart));
+    r = gm.get(morton2(ixpart | dypart));
+    r = gm.get(morton2(dxpart | ypart ));
+    r = gm.get(morton2(xpart  | ypart ));
+    r = gm.get(morton2(ixpart | ypart ));
+    r = gm.get(morton2(dxpart | iypart));
+    r = gm.get(morton2(xpart  | iypart));
+    r = gm.get(morton2(ixpart | iypart));
 
   }
   ENDPROFILE
@@ -441,6 +472,71 @@ void benchmark3d()
 
   }
   ENDPROFILE
+
+  BEGINPROFILE("Morton  3d grid get() random + 26 neighbors C")
+  volatile gridType r;
+  int x, y, z;
+
+  for (int i = 0; i < gridsize * gridsize * gridsize; i++)
+  {
+    x = random_pool[i * 3];
+    y = random_pool[i * 3 + 1];
+    z = random_pool[i * 3 + 2];
+
+    //Neighbors
+    uint64_t xpart = _pdep_u64(x, x3_mask);
+    uint64_t ypart = _pdep_u64(y, y3_mask);
+    uint64_t zpart = _pdep_u64(z, z3_mask);
+
+    uint64_t ixpart = ((xpart | yz3_mask) + 4) & x3_mask;
+    uint64_t iypart = ((ypart | xz3_mask) + 2) & y3_mask;
+    uint64_t izpart = ((zpart | xy3_mask) + 1) & z3_mask;
+
+    uint64_t dxpart = (xpart - 4) & x3_mask;
+    uint64_t dypart = (ypart - 2) & y3_mask;
+    uint64_t dzpart = (zpart - 1) & z3_mask;
+
+    //X-1
+    r = gm.get(morton3(dxpart | dypart | dzpart));
+    r = gm.get(morton3(dxpart | dypart | zpart ));
+    r = gm.get(morton3(dxpart | dypart | izpart));
+
+    r = gm.get(morton3(dxpart | ypart | dzpart));
+    r = gm.get(morton3(dxpart | ypart | zpart));
+    r = gm.get(morton3(dxpart | ypart | izpart));
+
+    r = gm.get(morton3(dxpart | iypart | dzpart));
+    r = gm.get(morton3(dxpart | iypart | zpart));
+    r = gm.get(morton3(dxpart | iypart | izpart));
+    //X
+    r = gm.get(morton3(xpart | dypart | dzpart));
+    r = gm.get(morton3(xpart | dypart | zpart));
+    r = gm.get(morton3(xpart | dypart | izpart));
+
+    r = gm.get(morton3(xpart | ypart | dzpart));
+    r = gm.get(morton3(xpart | ypart | zpart));
+    r = gm.get(morton3(xpart | ypart | izpart));
+
+    r = gm.get(morton3(xpart | iypart | dzpart));
+    r = gm.get(morton3(xpart | iypart | zpart));
+    r = gm.get(morton3(xpart | iypart | izpart));
+
+    //X+1
+    r = gm.get(morton3(ixpart | dypart | dzpart));
+    r = gm.get(morton3(ixpart | dypart | zpart));
+    r = gm.get(morton3(ixpart | dypart | izpart));
+
+    r = gm.get(morton3(ixpart | ypart | dzpart));
+    r = gm.get(morton3(ixpart | ypart | zpart));
+    r = gm.get(morton3(ixpart | ypart | izpart));
+
+    r = gm.get(morton3(ixpart | iypart | dzpart));
+    r = gm.get(morton3(ixpart | iypart | zpart));
+    r = gm.get(morton3(ixpart | iypart | izpart));
+
+  }
+  ENDPROFILE
+
 
 
 }
