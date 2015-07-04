@@ -86,8 +86,8 @@ public:
 
 public:
 
-  morton2d() : key(0) {};
-	explicit morton2d(T _key) : key(_key){};
+  inline morton2d() : key(0) {};
+  inline explicit morton2d(T _key) : key(_key){};
 
   /* If BMI2 intrinsics are not available, we rely on a look up table of precomputed morton codes. */
 	inline morton2d(const uint32_t x, const uint32_t y) : key(0){

@@ -90,6 +90,7 @@ public:
 
 public:
 
+  inline explicit morton3d() : key(0){};
 	inline explicit morton3d(const T _key) : key(_key){};
 
   /* If BMI2 intrinsics are not available, we rely on a look up table of precomputed morton codes. 
