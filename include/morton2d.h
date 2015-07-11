@@ -133,22 +133,22 @@ public:
 
 	inline morton2d operator|(const morton2d m1) const
 	{
-		return this->key | m1.key;
+		return morton2d<T>(this->key | m1.key);
 	}
 
 	inline morton2d operator&(const morton2d m1) const
 	{
-		return this->key & m1.key;
+		return morton2d<T>(this->key & m1.key);
 	}
 
 	inline morton2d operator>>(const uint64_t d) const
 	{
-		return this->key >> (2 * d);
+		return morton2d<T>(this->key >> (2 * d));
 	}
 
 	inline morton2d operator<<(const uint64_t d) const
 	{
-		return this->key << (2 * d);
+		return morton2d<T>(this->key << (2 * d));
 	}
 
   inline void operator+=(const morton2d<T> rhs)

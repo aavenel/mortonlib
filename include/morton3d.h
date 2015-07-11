@@ -139,24 +139,24 @@ public:
 
 	inline morton3d operator|(const morton3d m1) const
 	{
-		return this->key | m1.key;
+		return morton3d<T>(this->key | m1.key);
 	}
 
 	inline morton3d operator&(const morton3d m1) const
 	{
-		return this->key & m1.key;
+		return morton3d<T>(this->key & m1.key);
 	}
 
 	inline morton3d operator>>(const uint64_t d) const
 	{
 		assert(d<22);
-		return this->key >> (3 * d);
+		return morton3d<T>(this->key >> (3 * d));
 	}
 
 	inline morton3d operator<<(const uint64_t d) const
 	{
 		assert(d<22);
-		return this->key << (3 * d);
+		return morton3d<T>(this->key << (3 * d));
 	}
 
   inline void operator+=(const morton3d<T> m1)
