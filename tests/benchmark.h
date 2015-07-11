@@ -55,7 +55,7 @@ void benchmark2d()
   for (int i = 0; i < gridsize; ++i)
     for (int j = 0; j < gridsize; ++j)
     {
-      //XY convention for morton code, so (j,i) to iterate in a cache friendly way
+      //XY convention for morton code, so (i,j) to iterate in a cache friendly way
       r = gm.get(i, j);
     }
   ENDPROFILE
@@ -104,6 +104,7 @@ void benchmark2d()
   {
     for (int j = 0; j < gridsize; ++j)
     {
+      //XY convention for morton code, so (j,i) to iterate in a non cache-friendly way
       r = gm.get(j, i);
     }
   }
@@ -203,6 +204,37 @@ void benchmark2d()
   }
   ENDPROFILE
 
+  BEGINPROFILE("Morton  2d grid get() random + 8 neighbors B' ")
+  volatile gridType r;
+  int x, y;
+  for (int i = 0; i < gridsize * gridsize; i++)
+  {
+    x = random_pool[i * 2];
+    y = random_pool[i * 2 + 1];
+
+    morton2 xpart = morton2(x, 0);
+    morton2 ypart = morton2(0, y);
+
+    morton2 dxpart = xpart.decX();
+    morton2 dypart = ypart.decY();
+
+    morton2 ixpart = xpart.incX();
+    morton2 iypart = ypart.incY();
+
+    //Neighbors
+    r = gm.get(dxpart | dypart);
+    r = gm.get(xpart | dypart);
+    r = gm.get(ixpart | dypart);
+    r = gm.get(dxpart | ypart);
+    r = gm.get(xpart | ypart);
+    r = gm.get(ixpart | ypart);
+    r = gm.get(dxpart | iypart);
+    r = gm.get(xpart | iypart);
+    r = gm.get(ixpart | iypart);
+
+  }
+  ENDPROFILE
+
   BEGINPROFILE("Morton  2d grid get() random + 8 neighbors C")
   volatile gridType r;
   int x, y;
@@ -239,7 +271,7 @@ void benchmark2d()
 
 void benchmark3d()
 { 
-  const int gridsize = 256;
+  const int gridsize = 64;
   typedef int gridType;
   Grid3d<gridType> g = Grid3d<gridType>(gridsize);
   MortonGrid3d<gridType> gm = MortonGrid3d<gridType>(gridsize);
@@ -416,7 +448,7 @@ void benchmark3d()
   }
   ENDPROFILE
 
-  BEGINPROFILE("Morton  3d grid get() random + 26 neighbors B")
+  BEGINPROFILE("Morton  3d grid get() random + 26 neighbors B ")
   volatile gridType r;
   int x, y, z;
   for (int i = 0; i < gridsize * gridsize * gridsize; i++)
@@ -424,51 +456,59 @@ void benchmark3d()
     x = random_pool[i * 3];
     y = random_pool[i * 3 + 1];
     z = random_pool[i * 3 + 2];
-    morton3 mkey = morton3(x, y, z);
+
+    morton3 xpart = morton3(x, 0, 0);
+    morton3 ypart = morton3(0, y, 0);
+    morton3 zpart = morton3(0, 0, z);
     //Neighbors
 
+    morton3 ixpart = xpart.incX();
+    morton3 iypart = ypart.incY();
+    morton3 izpart = zpart.incZ();
+
+    morton3 dxpart = xpart.decX();
+    morton3 dypart = ypart.decY();
+    morton3 dzpart = zpart.decZ();
+
     //X-1
-    auto dxkey = mkey.decX();
-    r = gm.get(dxkey);
-    r = gm.get(dxkey.decZ());
-    r = gm.get(dxkey.incZ());
+    r = gm.get(dxpart | dypart | dzpart);
+    r = gm.get(dxpart | dypart | zpart);
+    r = gm.get(dxpart | dypart | izpart);
 
-    auto dxdykey = dxkey.decY();
-    r = gm.get(dxdykey);
-    r = gm.get(dxdykey.decZ());
-    r = gm.get(dxdykey.incZ());
+    r = gm.get(dxpart | ypart | dzpart);
+    r = gm.get(dxpart | ypart | zpart);
+    r = gm.get(dxpart | ypart | izpart);
 
-    auto dxiykey = dxkey.incY();
-    r = gm.get(dxiykey);
-    r = gm.get(dxiykey.decZ());
-    r = gm.get(dxiykey.incZ());
-
+    r = gm.get(dxpart | iypart | dzpart);
+    r = gm.get(dxpart | iypart | zpart);
+    r = gm.get(dxpart | iypart | izpart);
     //X
-    r = gm.get(mkey);
-    r = gm.get(mkey.decZ());
-    r = gm.get(mkey.incZ());
+    r = gm.get(xpart | dypart | dzpart);
+    r = gm.get(xpart | dypart | zpart);
+    r = gm.get(xpart | dypart | izpart);
 
-    r = gm.get(mkey.decY());
-    r = gm.get(mkey.decY().decZ());
-    r = gm.get(mkey.decY().incZ());
+    r = gm.get(xpart | ypart | dzpart);
+    r = gm.get(xpart | ypart | zpart);
+    r = gm.get(xpart | ypart | izpart);
 
-    r = gm.get(mkey.incY());
-    r = gm.get(mkey.incY().decZ());
-    r = gm.get(mkey.incY().incZ());
+    r = gm.get(xpart | iypart | dzpart);
+    r = gm.get(xpart | iypart | zpart);
+    r = gm.get(xpart | iypart | izpart);
 
     //X+1
-    auto ixkey = mkey.incX();
-    r = gm.get(ixkey);
-    r = gm.get(ixkey.decZ());
-    r = gm.get(ixkey.incZ());
+    r = gm.get(ixpart | dypart | dzpart);
+    r = gm.get(ixpart | dypart | zpart);
+    r = gm.get(ixpart | dypart | izpart);
 
-    r = gm.get(ixkey.decY());
-    r = gm.get(ixkey.decY().decZ());
-    r = gm.get(ixkey.decY().incZ());
+    r = gm.get(ixpart | ypart | dzpart);
+    r = gm.get(ixpart | ypart | zpart);
+    r = gm.get(ixpart | ypart | izpart);
 
-    r = gm.get(ixkey.incY());
-    r = gm.get(ixkey.incY().decZ());
-    r = gm.get(ixkey.incY().incZ());
+    r = gm.get(ixpart | iypart | dzpart);
+    r = gm.get(ixpart | iypart | zpart);
+    r = gm.get(ixpart | iypart | izpart);
+
+    
 
   }
   ENDPROFILE
