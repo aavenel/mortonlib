@@ -36,39 +36,46 @@ public:
 
 void benchmark2d()
 {
-  const int gridsize = 2048;
+  const int gridsize = 256;
+  const int iMax = 1e8;
   typedef uint64_t gridType;
   Grid2d<gridType> g = Grid2d<gridType>(gridsize);
   MortonGrid2d<gridType> gm = MortonGrid2d<gridType>(gridsize);
 
   BEGINPROFILE("Classic 2d grid get() linear")
   volatile gridType r;
-  for (int i = 0; i < gridsize; i++)
-    for (int j = 0; j < gridsize; ++j)
-    {
-      r = g.get(i, j);
-    }
+  for (int it = 0; it < iMax/(gridsize*gridsize); ++it)
+  {
+    for (int i = 0; i < gridsize; i++)
+      for (int j = 0; j < gridsize; ++j)
+      {
+        r = g.get(i, j);
+      }
+  }
   ENDPROFILE
 
   BEGINPROFILE("Morton  2d grid get() linear")
   volatile gridType r;
-  for (int i = 0; i < gridsize; ++i)
-    for (int j = 0; j < gridsize; ++j)
-    {
-      //XY convention for morton code, so (i,j) to iterate in a cache friendly way
-      r = gm.get(i, j);
-    }
+  for (int it = 0; it < iMax / (gridsize*gridsize); ++it)
+  {
+    for (int i = 0; i < gridsize; ++i)
+      for (int j = 0; j < gridsize; ++j)
+      {
+        //XY convention for morton code, so (i,j) to iterate in a cache friendly way
+        r = gm.get(i, j);
+      }
+  }
   ENDPROFILE
 
   srand(42);
   std::vector<int> random_pool;
-  random_pool.resize(gridsize * gridsize * 2);
+  random_pool.resize(iMax * 2);
   std::generate(random_pool.begin(), random_pool.end(), [&](){ return rand() % gridsize; });
 
   BEGINPROFILE("Classic 2d grid get() random")
   volatile gridType r;
   int x, y;
-  for (int i = 0; i < gridsize * gridsize; i++)
+  for (int i = 0; i < iMax; i++)
   {
     x = random_pool[i * 2];
     y = random_pool[i * 2 + 1];
@@ -79,7 +86,7 @@ void benchmark2d()
   BEGINPROFILE("Morton  2d grid get() random")
   volatile gridType r;
   int x, y;
-  for (int i = 0; i < gridsize * gridsize; i++)
+  for (int i = 0; i < iMax; i++)
   {
     x = random_pool[i * 2];
     y = random_pool[i * 2 + 1];
@@ -89,43 +96,50 @@ void benchmark2d()
 
   BEGINPROFILE("Classic 2d grid get() linear non cache friendly")
   volatile gridType r;
-  for (int i = 0; i < gridsize; ++i)
+  for (int it = 0; it < iMax / (gridsize*gridsize); ++it)
   {
-    for (int j = 0; j < gridsize; ++j)
+    for (int i = 0; i < gridsize; ++i)
     {
-      r = g.get(j, i);
+      for (int j = 0; j < gridsize; ++j)
+      {
+        r = g.get(j, i);
+      }
     }
   }
   ENDPROFILE
 
   BEGINPROFILE("Morton  2d grid get() linear non cache friendly")
   volatile gridType r;
-  for (int i = 0; i < gridsize; ++i)
+  for (int it = 0; it < iMax / (gridsize*gridsize); ++it)
   {
-    for (int j = 0; j < gridsize; ++j)
+    for (int i = 0; i < gridsize; ++i)
     {
-      //XY convention for morton code, so (j,i) to iterate in a non cache-friendly way
-      r = gm.get(j, i);
+      for (int j = 0; j < gridsize; ++j)
+      {
+        //XY convention for morton code, so (j,i) to iterate in a non cache-friendly way
+        r = gm.get(j, i);
+      }
     }
   }
   ENDPROFILE
 
-  srand(42);
-  std::generate(random_pool.begin(), random_pool.end(), [&](){ return (rand() % (gridsize - 2)) + 1; });
-
   BEGINPROFILE("Classic 2d grid get() random + 4 neighbors")
   volatile gridType r;
   int x, y;
-  for (int i = 0; i < gridsize * gridsize; i++)
+  for (int i = 0; i < iMax; i++)
   {
     x = random_pool[i * 2];
     y = random_pool[i * 2 + 1];
     r = g.get(x, y);
     //Neighbors
-    r = g.get(x, y + 1);
-    r = g.get(x, y - 1);
-    r = g.get(x + 1, y);
-    r = g.get(x - 1, y);
+    if (y+1 < gridsize)
+      r = g.get(x, y + 1);
+    if (y-1 >= 0)
+      r = g.get(x, y - 1);
+    if (x + 1 < gridsize)
+      r = g.get(x + 1, y);
+    if (x - 1 >= 0)
+      r = g.get(x - 1, y);
   }
   ENDPROFILE
 
@@ -133,29 +147,35 @@ void benchmark2d()
   volatile gridType r;
   int x, y;
   morton2 mkey(0);
-  for (int i = 0; i < gridsize * gridsize; i++)
+  for (int i = 0; i < iMax; i++)
   {
     x = random_pool[i * 2];
     y = random_pool[i * 2 + 1];
     mkey = morton2(x, y);
     r = gm.get(mkey);
     //Neighbors
-    r = gm.get(mkey.incY());
-    r = gm.get(mkey.decY());
-    r = gm.get(mkey.incX());
-    r = gm.get(mkey.decX());
+    if (y + 1 < gridsize)
+      r = gm.get(mkey.incY());
+    if (y - 1 >= 0)
+      r = gm.get(mkey.decY());
+
+    if (x + 1 < gridsize)
+      r = gm.get(mkey.incX());
+    if (x - 1 >= 0)
+      r = gm.get(mkey.decX());
   }
   ENDPROFILE
 
   BEGINPROFILE("Classic 2d grid get() random + 8 neighbors")
   volatile gridType r;
   int x, y;
-  for (int i = 0; i < gridsize * gridsize; i++)
+  for (int i = 0; i < iMax; i++)
   {
     x = random_pool[i * 2];
     y = random_pool[i * 2 + 1];
-    for (int xx = -1; xx < 2; ++xx)
-      for (int yy = -1; yy < 2; ++yy)
+
+    for (int xx = ((x-1 >= 0) ? -1 : 0); xx < ((x+1 < gridsize) ? 2 : 1); ++xx)
+      for (int yy = ((y-1 >=0) ? -1 : 0); yy < ((y+1 < gridsize) ? 2 : 1); ++yy)
         r = g.get(x + xx, y + yy);
 
   }
@@ -164,13 +184,13 @@ void benchmark2d()
   BEGINPROFILE("Morton  2d grid get() random + 8 neighbors A")
   volatile gridType r;
   int x, y;
-  for (int i = 0; i < gridsize * gridsize; i++)
+  for (int i = 0; i < iMax; i++)
   {
     x = random_pool[i * 2];
     y = random_pool[i * 2 + 1];
 
-    for (int xx = -1; xx < 2; ++xx)
-      for (int yy = -1; yy < 2; ++yy)
+    for (int xx = ((x - 1 >= 0) ? -1 : 0); xx < ((x + 1 < gridsize) ? 2 : 1); ++xx)
+      for (int yy = ((y - 1 >= 0) ? -1 : 0); yy < ((y + 1 < gridsize) ? 2 : 1); ++yy)
         r = gm.get(x + xx, y + yy);
 
   }
@@ -179,7 +199,7 @@ void benchmark2d()
   BEGINPROFILE("Morton  2d grid get() random + 8 neighbors B")
   volatile gridType r;
   int x, y;
-  for (int i = 0; i < gridsize * gridsize; i++)
+  for (int i = 0; i < iMax; i++)
   {
     x = random_pool[i * 2];
     y = random_pool[i * 2 + 1];
@@ -187,19 +207,31 @@ void benchmark2d()
     //Neighbors
 
     //X-1
-    r = gm.get(mkey.decX());
-    r = gm.get(mkey.decX().decY());
-    r = gm.get(mkey.decX().incY());
+    if (x - 1 >= 0)
+    {
+      r = gm.get(mkey.decX());
+      if (y-1 >= 0)
+        r = gm.get(mkey.decX().decY());
+      if (y+1 < gridsize)
+        r = gm.get(mkey.decX().incY());
+    }
 
     //X
     r = gm.get(mkey);
-    r = gm.get(mkey.decY());
-    r = gm.get(mkey.incY());
+    if (y - 1 >= 0)
+      r = gm.get(mkey.decY());
+    if (y + 1 < gridsize)
+      r = gm.get(mkey.incY());
 
     //X+1
-    r = gm.get(mkey.incX());
-    r = gm.get(mkey.incX().decY());
-    r = gm.get(mkey.incX().incY());
+    if (x + 1 < gridsize)
+    {
+      r = gm.get(mkey.incX());
+      if (y - 1 >= 0)
+        r = gm.get(mkey.incX().decY());
+      if (y + 1 < gridsize)
+        r = gm.get(mkey.incX().incY());
+    }
 
   }
   ENDPROFILE
@@ -207,7 +239,7 @@ void benchmark2d()
   BEGINPROFILE("Morton  2d grid get() random + 8 neighbors B' ")
   volatile gridType r;
   int x, y;
-  for (int i = 0; i < gridsize * gridsize; i++)
+  for (int i = 0; i < iMax; i++)
   {
     x = random_pool[i * 2];
     y = random_pool[i * 2 + 1];
@@ -216,21 +248,46 @@ void benchmark2d()
     morton2 ypart = morton2(0, y);
 
     morton2 dxpart = xpart.decX();
-    morton2 dypart = ypart.decY();
 
     morton2 ixpart = xpart.incX();
-    morton2 iypart = ypart.incY();
 
     //Neighbors
-    r = gm.get(dxpart | dypart);
-    r = gm.get(xpart | dypart);
-    r = gm.get(ixpart | dypart);
-    r = gm.get(dxpart | ypart);
+    //Y-1
+    if (y - 1 >= 0)
+    {
+      morton2 dypart = ypart.decY();
+
+      if (x - 1 >= 0)
+        r = gm.get(dxpart | dypart);
+
+      r = gm.get(xpart | dypart);
+
+      if (x+1 < gridsize)
+        r = gm.get(ixpart | dypart);
+    }
+
+    //Y
+    if (x - 1 >= 0)
+      r = gm.get(dxpart | ypart);
+
     r = gm.get(xpart | ypart);
-    r = gm.get(ixpart | ypart);
-    r = gm.get(dxpart | iypart);
-    r = gm.get(xpart | iypart);
-    r = gm.get(ixpart | iypart);
+
+    if (x + 1 < gridsize)
+      r = gm.get(ixpart | ypart);
+
+    //Y+1
+    if (y + 1 < gridsize)
+    {
+      morton2 iypart = ypart.incY();
+
+      if (x - 1 >= 0)
+        r = gm.get(dxpart | iypart);
+
+      r = gm.get(xpart | iypart);
+
+      if (x + 1 < gridsize)
+        r = gm.get(ixpart | iypart);
+    }
 
   }
   ENDPROFILE
@@ -238,7 +295,7 @@ void benchmark2d()
   BEGINPROFILE("Morton  2d grid get() random + 8 neighbors C")
   volatile gridType r;
   int x, y;
-  for (int i = 0; i < gridsize * gridsize; i++)
+  for (int i = 0; i < iMax; i++)
   {
     x = random_pool[i * 2];
     y = random_pool[i * 2 + 1];
@@ -253,15 +310,38 @@ void benchmark2d()
     uint64_t dxpart = (xpart - 2) & x2_mask;
     uint64_t dypart = (ypart - 1) & y2_mask;
 
-    r = gm.get(morton2(dxpart | dypart));
-    r = gm.get(morton2(xpart  | dypart));
-    r = gm.get(morton2(ixpart | dypart));
-    r = gm.get(morton2(dxpart | ypart ));
-    r = gm.get(morton2(xpart  | ypart ));
-    r = gm.get(morton2(ixpart | ypart ));
-    r = gm.get(morton2(dxpart | iypart));
-    r = gm.get(morton2(xpart  | iypart));
-    r = gm.get(morton2(ixpart | iypart));
+    //Y-1
+    if (y - 1 >= 0)
+    {
+      if (x - 1 >= 0)
+        r = gm.get(morton2(dxpart | dypart));
+
+      r = gm.get(morton2(xpart | dypart));
+
+      if (x + 1 < gridsize)
+        r = gm.get(morton2(ixpart | dypart));
+    }
+
+    //Y
+    if (x - 1 >= 0)
+      r = gm.get(morton2(dxpart | ypart));
+
+    r = gm.get(morton2(xpart | ypart));
+
+    if (x + 1 < gridsize)
+      r = gm.get(morton2(ixpart | ypart));
+
+    //Y+1
+    if (y + 1 < gridsize)
+    {
+      if (x - 1 >= 0)
+        r = gm.get(morton2(dxpart | iypart));
+
+      r = gm.get(morton2(xpart | iypart));
+
+      if (x + 1 < gridsize)
+        r = gm.get(morton2(ixpart | iypart));
+    }
 
   }
   ENDPROFILE
@@ -271,41 +351,49 @@ void benchmark2d()
 
 void benchmark3d()
 { 
-  const int gridsize = 64;
+  const int gridsize = 256;
+  const int iMax = 1e8;
   typedef int gridType;
   Grid3d<gridType> g = Grid3d<gridType>(gridsize);
   MortonGrid3d<gridType> gm = MortonGrid3d<gridType>(gridsize);
 
   BEGINPROFILE("Classic 3d grid get() linear")
   volatile gridType r;
-  for (int i = 0; i < gridsize; i++)
-    for (int j = 0; j < gridsize; ++j)
-      for (int k = 0; k < gridsize; ++k)
-      {
-        r = g.get(i, j, k);
-      }
+  for (int it = 0; it < iMax / (gridsize*gridsize*gridsize); ++it)
+  {
+    for (int i = 0; i < gridsize; ++i)
+      for (int j = 0; j < gridsize; ++j)
+        for (int k = 0; k < gridsize; ++k)
+        {
+          r = g.get(i, j, k);
+        }
+  }
   ENDPROFILE
 
   BEGINPROFILE("Morton  3d grid get() linear")
   volatile gridType r;
-  for (int i = 0; i < gridsize; ++i)
-    for (int j = 0; j < gridsize; ++j)
-      for (int k = 0; k < gridsize; ++k)
-      {
-        //XYZ convention for morton code, so (i,j,z) to iterate in a cache friendly way
-        r = gm.get(i, j, k);
-      }
+  for (int it = 0; it < iMax / (gridsize*gridsize*gridsize); ++it)
+  {
+    for (int i = 0; i < gridsize; ++i)
+      for (int j = 0; j < gridsize; ++j)
+        for (int k = 0; k < gridsize; ++k)
+        {
+          //XYZ convention for morton code, so (i,j,k) to iterate in a cache friendly way
+          r = gm.get(i, j, k);
+        }
+  }
   ENDPROFILE
 
   srand(42);
   std::vector<int> random_pool;
-  random_pool.resize(gridsize * gridsize * gridsize * 3);
+  random_pool.resize(iMax * 3);
   std::generate(random_pool.begin(), random_pool.end(), [&](){ return rand() % gridsize; });
 
   BEGINPROFILE("Classic 3d grid get() random")
   volatile gridType r;
   int x, y, z;
-  for (int i = 0; i < gridsize * gridsize * gridsize; i++)
+
+  for (int i = 0; i < iMax; i++)
   {
     x = random_pool[i * 3];
     y = random_pool[i * 3 + 1];
@@ -317,7 +405,7 @@ void benchmark3d()
   BEGINPROFILE("Morton  3d grid get() random")
   volatile gridType r;
   int x, y, z;
-  for (int i = 0; i < gridsize * gridsize * gridsize; i++)
+  for (int i = 0; i < iMax; i++)
   {
     x = random_pool[i * 3];
     y = random_pool[i * 3 + 1];
@@ -328,13 +416,16 @@ void benchmark3d()
 
   BEGINPROFILE("Classic 3d grid get() linear non cache friendly")
   volatile gridType r;
-  for (int i = 0; i < gridsize; ++i)
+  for (int it = 0; it < iMax / (gridsize*gridsize*gridsize); ++it)
   {
-    for (int j = 0; j < gridsize; ++j)
+    for (int i = 0; i < gridsize; ++i)
     {
-      for (int k = 0; k < gridsize; ++k)
+      for (int j = 0; j < gridsize; ++j)
       {
-        r = g.get(k, j, i);
+        for (int k = 0; k < gridsize; ++k)
+        {
+          r = g.get(k, j, i);
+        }
       }
     }
   }
@@ -342,38 +433,43 @@ void benchmark3d()
 
   BEGINPROFILE("Morton  3d grid get() linear non cache friendly")
   volatile gridType r;
-  for (int i = 0; i < gridsize; ++i)
+  for (int it = 0; it < iMax / (gridsize*gridsize*gridsize); ++it)
   {
-    for (int j = 0; j < gridsize; ++j)
+    for (int i = 0; i < gridsize; ++i)
     {
-      for (int k = 0; k < gridsize; ++k)
+      for (int j = 0; j < gridsize; ++j)
       {
-        r = gm.get(k, j, i);
+        for (int k = 0; k < gridsize; ++k)
+        {
+          r = gm.get(k, j, i);
+        }
       }
     }
   }
   ENDPROFILE
 
-
-  srand(42);
-  std::generate(random_pool.begin(), random_pool.end(), [&](){ return (rand() % (gridsize - 2)) + 1; } );
-
   BEGINPROFILE("Classic 3d grid get() random + 6 neighbors")
   volatile gridType r;
   int x, y, z;
-  for (int i = 0; i < gridsize * gridsize * gridsize; i++)
+  for (int i = 0; i < iMax; i++)
   {
     x = random_pool[i * 3];
     y = random_pool[i * 3 + 1];
     z = random_pool[i * 3 + 2];
     r = g.get(x, y, z);
     //Neighbors
-    r = g.get(x, y, z + 1);
-    r = g.get(x, y, z - 1);
-    r = g.get(x, y+1, z);
-    r = g.get(x, y - 1, z);
-    r = g.get(x + 1, y, z);
-    r = g.get(x - 1, y, z);
+    if (z+1 < gridsize)
+      r = g.get(x, y, z + 1);
+    if (z-1 >= 0)
+      r = g.get(x, y, z - 1);
+    if (y + 1 < gridsize)
+      r = g.get(x, y+1, z);
+    if (y - 1 >= 0)
+      r = g.get(x, y - 1, z);
+    if (x + 1 < gridsize)
+      r = g.get(x + 1, y, z);
+    if (x - 1 >= 0)
+      r = g.get(x - 1, y, z);
   }
   ENDPROFILE
 
@@ -381,7 +477,7 @@ void benchmark3d()
   volatile gridType r;
   int x, y, z;
   morton3 mkey(0);
-  for (int i = 0; i < gridsize * gridsize * gridsize; i++)
+  for (int i = 0; i < iMax; i++)
   {
     x = random_pool[i * 3];
     y = random_pool[i * 3 + 1];
@@ -389,19 +485,25 @@ void benchmark3d()
     mkey = morton3(x, y, z);
     r = gm.get(mkey);
     //Neighbors
-    r = gm.get(mkey.decZ());
-    r = gm.get(mkey.incZ());
-    r = gm.get(mkey.incY());
-    r = gm.get(mkey.decY());
-    r = gm.get(mkey.incX());
-    r = gm.get(mkey.decX());
+    if (z - 1 >= 0)
+      r = gm.get(mkey.decZ());
+    if (z + 1 < gridsize)
+      r = gm.get(mkey.incZ());
+    if (y + 1 < gridsize)
+      r = gm.get(mkey.incY());
+    if (y - 1 >= 0)
+      r = gm.get(mkey.decY());
+    if (x + 1 < gridsize)
+      r = gm.get(mkey.incX());
+    if (x - 1 >= 0)
+      r = gm.get(mkey.decX());
   }
   ENDPROFILE
 
   BEGINPROFILE("Classic 3d grid get() random + 26 neighbors")
   volatile gridType r;
   int x, y, z;
-  for (int i = 0; i < gridsize * gridsize * gridsize; i++)
+  for (int i = 0; i < iMax; i++)
   {
     x = random_pool[i * 3];
     y = random_pool[i * 3 + 1];
@@ -414,13 +516,13 @@ void benchmark3d()
           r = g.get(x+xx, y+yy, z+zz);
     */
     int xkey, ykey, zkey;
-    for (int xx = -1; xx < 2; ++xx)
+    for (int xx = ((x - 1 >= 0) ? -1 : 0); xx < ((x + 1 < gridsize) ? 2 : 1); ++xx)
     {
       xkey = (x + xx) * gridsize*gridsize;
-      for (int yy = -1; yy < 2; ++yy)
+      for (int yy = ((y - 1 >= 0) ? -1 : 0); yy < ((y + 1 < gridsize) ? 2 : 1); ++yy)
       {
         ykey = xkey + (y + yy) * gridsize;
-        for (int zz = -1; zz < 2; ++zz)
+        for (int zz = ((z - 1 >= 0) ? -1 : 0); zz < ((z + 1 < gridsize) ? 2 : 1); ++zz)
         {
           zkey = ykey + (z + zz);
           r = g.get(zkey);
@@ -434,15 +536,15 @@ void benchmark3d()
   BEGINPROFILE("Morton  3d grid get() random + 26 neighbors A")
   volatile gridType r;
   int x, y, z;
-  for (int i = 0; i < gridsize * gridsize * gridsize; i++)
+  for (int i = 0; i < iMax; i++)
   {
     x = random_pool[i * 3];
     y = random_pool[i * 3 + 1];
     z = random_pool[i * 3 + 2];
 
-    for (int xx = -1; xx < 2; ++xx)
-      for (int yy = -1; yy < 2; ++yy)
-        for (int zz = -1; zz < 2; ++zz)
+    for (int xx = ((x - 1 >= 0) ? -1 : 0); xx < ((x + 1 < gridsize) ? 2 : 1); ++xx)
+      for (int yy = ((y - 1 >= 0) ? -1 : 0); yy < ((y + 1 < gridsize) ? 2 : 1); ++yy)
+        for (int zz = ((z - 1 >= 0) ? -1 : 0); zz < ((z + 1 < gridsize) ? 2 : 1); ++zz)
           r = gm.get(x + xx, y + yy, z + zz);
 
   }
@@ -451,7 +553,7 @@ void benchmark3d()
   BEGINPROFILE("Morton  3d grid get() random + 26 neighbors B ")
   volatile gridType r;
   int x, y, z;
-  for (int i = 0; i < gridsize * gridsize * gridsize; i++)
+  for (int i = 0; i < iMax; i++)
   {
     x = random_pool[i * 3];
     y = random_pool[i * 3 + 1];
@@ -471,42 +573,103 @@ void benchmark3d()
     morton3 dzpart = zpart.decZ();
 
     //X-1
-    r = gm.get(dxpart | dypart | dzpart);
-    r = gm.get(dxpart | dypart | zpart);
-    r = gm.get(dxpart | dypart | izpart);
+    if (x - 1 >= 0)
+    {
+      if (y - 1 >= 0)
+      {
+        if (z - 1 >= 0)
+          r = gm.get(dxpart | dypart | dzpart);
 
-    r = gm.get(dxpart | ypart | dzpart);
-    r = gm.get(dxpart | ypart | zpart);
-    r = gm.get(dxpart | ypart | izpart);
+        r = gm.get(dxpart | dypart | zpart);
 
-    r = gm.get(dxpart | iypart | dzpart);
-    r = gm.get(dxpart | iypart | zpart);
-    r = gm.get(dxpart | iypart | izpart);
+        if (z + 1 < gridsize)
+          r = gm.get(dxpart | dypart | izpart);
+      }
+
+      if (z - 1 >= 0)
+        r = gm.get(dxpart | ypart | dzpart);
+
+      r = gm.get(dxpart | ypart | zpart);
+
+      if (z + 1 < gridsize)
+        r = gm.get(dxpart | ypart | izpart);
+
+      if (y + 1 < gridsize)
+      {
+        if (z - 1 >= 0)
+          r = gm.get(dxpart | iypart | dzpart);
+
+        r = gm.get(dxpart | iypart | zpart);
+
+        if (z + 1 < gridsize)
+          r = gm.get(dxpart | iypart | izpart);
+      }
+    }
+
     //X
-    r = gm.get(xpart | dypart | dzpart);
-    r = gm.get(xpart | dypart | zpart);
-    r = gm.get(xpart | dypart | izpart);
+    if (y - 1 >= 0)
+    {
+      if (z - 1 >= 0)
+        r = gm.get(xpart | dypart | dzpart);
 
-    r = gm.get(xpart | ypart | dzpart);
+      r = gm.get(xpart | dypart | zpart);
+
+      if (z + 1 < gridsize)
+        r = gm.get(xpart | dypart | izpart);
+    }
+
+    if (z - 1 >= 0)
+      r = gm.get(xpart | ypart | dzpart);
+
     r = gm.get(xpart | ypart | zpart);
-    r = gm.get(xpart | ypart | izpart);
 
-    r = gm.get(xpart | iypart | dzpart);
-    r = gm.get(xpart | iypart | zpart);
-    r = gm.get(xpart | iypart | izpart);
+    if (z + 1 < gridsize)
+      r = gm.get(xpart | ypart | izpart);
+
+    if (y + 1 < gridsize)
+    {
+      if (z - 1 >= 0)
+        r = gm.get(xpart | iypart | dzpart);
+
+      r = gm.get(xpart | iypart | zpart);
+
+      if (z + 1 < gridsize)
+        r = gm.get(xpart | iypart | izpart);
+    }
 
     //X+1
-    r = gm.get(ixpart | dypart | dzpart);
-    r = gm.get(ixpart | dypart | zpart);
-    r = gm.get(ixpart | dypart | izpart);
+    if (x+1 < gridsize)
+    {
+      if (y - 1 >= 0)
+      {
+        if (z - 1 >= 0)
+          r = gm.get(ixpart | dypart | dzpart);
 
-    r = gm.get(ixpart | ypart | dzpart);
-    r = gm.get(ixpart | ypart | zpart);
-    r = gm.get(ixpart | ypart | izpart);
+        r = gm.get(ixpart | dypart | zpart);
 
-    r = gm.get(ixpart | iypart | dzpart);
-    r = gm.get(ixpart | iypart | zpart);
-    r = gm.get(ixpart | iypart | izpart);
+        if (z + 1 < gridsize)
+          r = gm.get(ixpart | dypart | izpart);
+      }
+
+      if (z - 1 >= 0)
+        r = gm.get(ixpart | ypart | dzpart);
+
+      r = gm.get(ixpart | ypart | zpart);
+
+      if (z + 1 < gridsize)
+        r = gm.get(ixpart | ypart | izpart);
+
+      if (y + 1 < gridsize)
+      {
+        if (z - 1 >= 0)
+          r = gm.get(ixpart | iypart | dzpart);
+
+        r = gm.get(ixpart | iypart | zpart);
+
+        if (z + 1 < gridsize)
+          r = gm.get(ixpart | iypart | izpart);
+      }
+    }
 
     
 
@@ -517,7 +680,7 @@ void benchmark3d()
   volatile gridType r;
   int x, y, z;
 
-  for (int i = 0; i < gridsize * gridsize * gridsize; i++)
+  for (int i = 0; i < iMax; i++)
   {
     x = random_pool[i * 3];
     y = random_pool[i * 3 + 1];
@@ -537,42 +700,103 @@ void benchmark3d()
     uint64_t dzpart = (zpart - 1) & z3_mask;
 
     //X-1
-    r = gm.get(morton3(dxpart | dypart | dzpart));
-    r = gm.get(morton3(dxpart | dypart | zpart ));
-    r = gm.get(morton3(dxpart | dypart | izpart));
+    if (x - 1 >= 0)
+    {
+      if (y - 1 >= 0)
+      {
+        if (z - 1 >= 0)
+          r = gm.get(morton3(dxpart | dypart | dzpart));
 
-    r = gm.get(morton3(dxpart | ypart | dzpart));
-    r = gm.get(morton3(dxpart | ypart | zpart));
-    r = gm.get(morton3(dxpart | ypart | izpart));
+        r = gm.get(morton3(dxpart | dypart | zpart));
 
-    r = gm.get(morton3(dxpart | iypart | dzpart));
-    r = gm.get(morton3(dxpart | iypart | zpart));
-    r = gm.get(morton3(dxpart | iypart | izpart));
+        if (z + 1 < gridsize)
+          r = gm.get(morton3(dxpart | dypart | izpart));
+      }
+
+      if (z - 1 >= 0)
+        r = gm.get(morton3(dxpart | ypart | dzpart));
+
+      r = gm.get(morton3(dxpart | ypart | zpart));
+
+      if (z + 1 < gridsize)
+        r = gm.get(morton3(dxpart | ypart | izpart));
+
+      if (y + 1 < gridsize)
+      {
+        if (z - 1 >= 0)
+          r = gm.get(morton3(dxpart | iypart | dzpart));
+
+        r = gm.get(morton3(dxpart | iypart | zpart));
+
+        if (z + 1 < gridsize)
+          r = gm.get(morton3(dxpart | iypart | izpart));
+      }
+    }
+
     //X
-    r = gm.get(morton3(xpart | dypart | dzpart));
-    r = gm.get(morton3(xpart | dypart | zpart));
-    r = gm.get(morton3(xpart | dypart | izpart));
+    if (y - 1 >= 0)
+    {
+      if (z - 1 >= 0)
+        r = gm.get(morton3(xpart | dypart | dzpart));
 
-    r = gm.get(morton3(xpart | ypart | dzpart));
+      r = gm.get(morton3(xpart | dypart | zpart));
+
+      if (z + 1 < gridsize)
+        r = gm.get(morton3(xpart | dypart | izpart));
+    }
+
+    if (z - 1 >= 0)
+      r = gm.get(morton3(xpart | ypart | dzpart));
+
     r = gm.get(morton3(xpart | ypart | zpart));
-    r = gm.get(morton3(xpart | ypart | izpart));
 
-    r = gm.get(morton3(xpart | iypart | dzpart));
-    r = gm.get(morton3(xpart | iypart | zpart));
-    r = gm.get(morton3(xpart | iypart | izpart));
+    if (z + 1 < gridsize)
+      r = gm.get(morton3(xpart | ypart | izpart));
+
+    if (y + 1 < gridsize)
+    {
+      if (z - 1 >= 0)
+        r = gm.get(morton3(xpart | iypart | dzpart));
+
+      r = gm.get(morton3(xpart | iypart | zpart));
+
+      if (z + 1 < gridsize)
+        r = gm.get(morton3(xpart | iypart | izpart));
+    }
 
     //X+1
-    r = gm.get(morton3(ixpart | dypart | dzpart));
-    r = gm.get(morton3(ixpart | dypart | zpart));
-    r = gm.get(morton3(ixpart | dypart | izpart));
+    if (x + 1 < gridsize)
+    {
+      if (y - 1 >= 0)
+      {
+        if (z - 1 >= 0)
+          r = gm.get(morton3(ixpart | dypart | dzpart));
 
-    r = gm.get(morton3(ixpart | ypart | dzpart));
-    r = gm.get(morton3(ixpart | ypart | zpart));
-    r = gm.get(morton3(ixpart | ypart | izpart));
+        r = gm.get(morton3(ixpart | dypart | zpart));
 
-    r = gm.get(morton3(ixpart | iypart | dzpart));
-    r = gm.get(morton3(ixpart | iypart | zpart));
-    r = gm.get(morton3(ixpart | iypart | izpart));
+        if (z + 1 < gridsize)
+          r = gm.get(morton3(ixpart | dypart | izpart));
+      }
+
+      if (z - 1 >= 0)
+        r = gm.get(morton3(ixpart | ypart | dzpart));
+
+      r = gm.get(morton3(ixpart | ypart | zpart));
+
+      if (z + 1 < gridsize)
+        r = gm.get(morton3(ixpart | ypart | izpart));
+
+      if (y + 1 < gridsize)
+      {
+        if (z - 1 >= 0)
+          r = gm.get(morton3(ixpart | iypart | dzpart));
+
+        r = gm.get(morton3(ixpart | iypart | zpart));
+
+        if (z + 1 < gridsize)
+          r = gm.get(morton3(ixpart | iypart | izpart));
+      }
+    }
 
   }
   ENDPROFILE
