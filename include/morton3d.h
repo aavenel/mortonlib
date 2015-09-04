@@ -28,6 +28,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <array>
 #include <assert.h>
 #include <immintrin.h>
+#include "emmintrin.h"
 
 
 /*
@@ -35,6 +36,10 @@ BMI2 (Bit Manipulation Instruction Set 2) is a special set of instructions avail
 Some instructions are not available for Microsoft Visual Studio older than 2013.
 */
 #define USE_BMI2
+
+//SIMD flags
+#define SSE2
+#define AVX2
 
 #ifndef USE_BMI2
 //mortonkey(x+1) = (mortonkey(x) - MAXMORTONKEY) & MAXMORTONKEY
@@ -331,6 +336,69 @@ std::ostream& operator<<(std::ostream& os, const morton3d<T>& m)
   os << m.key << ": " << x << ", " << y << ", " << z ;
   return os;
 }
+
+
+#ifdef SSE2
+//Same class specialized for SIMD data __m128i (i.e. four 32 bits morton codes at the same time)
+template<>
+struct morton3d <__m128i>
+{
+public:
+  __m128i key;
+
+public:
+
+  inline morton3d(const __m128i x, const __m128i y, const __m128i z)
+  {
+    __m128i xpart = splitBy3(x);
+    __m128i ypart = splitBy3(y);
+    __m128i zpart = splitBy3(z);
+    key = _mm_or_si128(_mm_slli_epi32(xpart, 2), _mm_or_si128(_mm_slli_epi32(ypart, 1), zpart));
+  }
+
+  // method to seperate bits from a given integer 3 positions apart
+  inline __m128i splitBy3(__m128i a){
+    __m128i result = _mm_and_si128(a, _mm_set_epi32(0x1fffff, 0x1fffff, 0x1fffff, 0x1fffff));
+    result = _mm_and_si128(_mm_or_si128(result, _mm_slli_epi32(result, 16)), _mm_set1_epi32(0xff0000ff));
+    result = _mm_and_si128(_mm_or_si128(result, _mm_slli_epi32(result, 8)), _mm_set1_epi32(0x0f00f00f));
+    result = _mm_and_si128(_mm_or_si128(result, _mm_slli_epi32(result, 4)), _mm_set1_epi32(0xc30c30c3));
+    result = _mm_and_si128(_mm_or_si128(result, _mm_slli_epi32(result, 2)), _mm_set1_epi32(0x49249249));
+    return result;
+  }
+};
+#endif
+
+#ifdef AVX2
+//Same class specialized for SIMD data __m256i (i.e. eight 32 bits morton codes at the same time)
+template<>
+struct morton3d <__m256i>
+{
+public:
+  __m256i key;
+
+public:
+
+  inline morton3d(const __m256i x, const __m256i y, const __m256i z)
+  {
+    __m256i xpart = splitBy3(x);
+    __m256i ypart = splitBy3(y);
+    __m256i zpart = splitBy3(z);
+    key = _mm256_or_si256(_mm256_slli_epi32(xpart, 2), _mm256_or_si256(_mm256_slli_epi32(ypart, 1), zpart));
+  }
+
+  // method to seperate bits from a given integer 3 positions apart
+  inline __m256i splitBy3(__m256i a){
+    __m256i result = _mm256_and_si256(a, _mm256_set1_epi32(0x1fffff));
+    result = _mm256_and_si256(_mm256_or_si256(result, _mm256_slli_epi32(result, 16)), _mm256_set1_epi32(0xff0000ff));
+    result = _mm256_and_si256(_mm256_or_si256(result, _mm256_slli_epi32(result, 8)), _mm256_set1_epi32(0x0f00f00f));
+    result = _mm256_and_si256(_mm256_or_si256(result, _mm256_slli_epi32(result, 4)), _mm256_set1_epi32(0xc30c30c3));
+    result = _mm256_and_si256(_mm256_or_si256(result, _mm256_slli_epi32(result, 2)), _mm256_set1_epi32(0x49249249));
+    return result;
+  }
+};
+#endif
+
+
 
 typedef morton3d<> morton3;
 

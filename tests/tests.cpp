@@ -163,6 +163,11 @@ void test_morton3d()
   assert(m16.incX().incY().incZ() == morton3d<uint16_t>(1, 1, 1));
   assert(morton3d<uint16_t>(1, 1, 1).decX().decY().decZ() == morton3d<uint16_t>(0, 0, 0));
 
+  //SIMD
+  //TODO : implement units tests for SIMD
+  morton3d<__m128i> msimd4 = morton3d<__m128i>(_mm_set_epi32(256, 0, 0, 1024), _mm_set_epi32(0, 2, 0, 0), _mm_set_epi32(0, 0, 2, 1024));
+  morton3d<__m256i> msimd8 = morton3d<__m256i>(_mm256_set_epi32(256, 0, 0, 1024, 0, 0, 0, 0), _mm256_set_epi32(0, 2, 0, 0, 1, 0, 58, 78), _mm256_set_epi32(0, 0, 2, 1024, 512, 7, 8, 9));
+  
 }
 
 int main(int argc, char *argv[])
