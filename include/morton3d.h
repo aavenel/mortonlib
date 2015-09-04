@@ -347,6 +347,10 @@ public:
   __m128i key;
 
 public:
+  inline morton3d()
+  {
+    key = _mm_setzero_si128();
+  }
 
   inline morton3d(const __m128i x, const __m128i y, const __m128i z)
   {
@@ -377,6 +381,10 @@ public:
   __m256i key;
 
 public:
+  inline morton3d()
+  {
+    key = _mm256_setzero_si256();
+  }
 
   inline morton3d(const __m256i x, const __m256i y, const __m256i z)
   {
