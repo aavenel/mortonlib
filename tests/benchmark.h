@@ -9,6 +9,9 @@
 #include "time.h"
 #include <chrono>
 
+#include "immintrin.h"
+#include <emmintrin.h>
+
 #include "grids.h"
 
 struct Profiler
@@ -40,7 +43,6 @@ public:
 
 #define BEGINPROFILE(name) { Profiler p(name, false);
 #define ENDPROFILE }
-
 
 void benchmark2d(const int gridsize = 64, const int iMax = 1e8)
 {
@@ -390,7 +392,7 @@ void benchmark3d(const int gridsize = 64, const int iMax= 1e8)
   ENDPROFILE
 
   srand(42);
-  std::vector<int> random_pool;
+  __declspec(align(32)) std::vector<int32_t> random_pool;
   random_pool.resize(iMax * 3);
   std::generate(random_pool.begin(), random_pool.end(), [&](){ return rand() % gridsize; });
 
@@ -416,6 +418,57 @@ void benchmark3d(const int gridsize = 64, const int iMax= 1e8)
     y = random_pool[i * 3 + 1];
     z = random_pool[i * 3 + 2];
     r = gm.get(x, y, z);
+  }
+  ENDPROFILE
+
+  BEGINPROFILE("Morton3d grid SIMD __m128 get() random")
+  {
+    volatile gridType r;
+    morton3d<__m128i> mkeys;
+
+    for (int i = 0; i < int(iMax/4); i++)
+    {
+      __m128i x = _mm_load_si128((__m128i*)&(random_pool[i*12]));
+      __m128i y = _mm_load_si128((__m128i*)&(random_pool[i * 12 + 4]));
+      __m128i z = _mm_load_si128((__m128i*)&(random_pool[i * 12 + 8]));
+
+      mkeys = morton3d<__m128i>(x, y, z);
+      uint32_t* int32ptr = (uint32_t*)&mkeys.key;
+      
+      r = gm.get(morton3(*int32ptr));
+      r = gm.get(morton3(*(int32ptr +1)));
+      r = gm.get(morton3(*(int32ptr + 2)));
+      r = gm.get(morton3(*(int32ptr + 3)));
+
+    }
+
+  }
+  ENDPROFILE
+
+  BEGINPROFILE("Morton3d grid SIMD __m256 get() random")
+  {
+    volatile gridType r;
+    morton3d<__m256i> mkeys;
+
+    for (int i = 0; i < int(iMax/4); i++)
+    {
+      __m256i x = _mm256_load_si256((__m256i*)&(random_pool[i * 12]));
+      __m256i y = _mm256_load_si256((__m256i*)&(random_pool[i * 12 + 8]));
+      __m256i z = _mm256_load_si256((__m256i*)&(random_pool[i * 12 + 16]));
+
+      mkeys = morton3d<__m256i>(x, y, z);
+      uint32_t* int32ptr = (uint32_t*)&mkeys.key;
+
+      r = gm.get(morton3(*int32ptr));
+      r = gm.get(morton3(*(int32ptr + 1)));
+      r = gm.get(morton3(*(int32ptr + 2)));
+      r = gm.get(morton3(*(int32ptr + 3)));
+      r = gm.get(morton3(*(int32ptr + 4)));
+      r = gm.get(morton3(*(int32ptr + 5)));
+      r = gm.get(morton3(*(int32ptr + 6)));
+      r = gm.get(morton3(*(int32ptr + 7)));
+    }
+
   }
   ENDPROFILE
 

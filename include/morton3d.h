@@ -87,7 +87,7 @@ const uint64_t xy3_mask = x3_mask | y3_mask;
 const uint64_t xz3_mask = x3_mask | z3_mask;
 const uint64_t yz3_mask = y3_mask | z3_mask;
 
-template<class T = uint64_t>
+template<class T = uint32_t>
 struct morton3d
 {
 public:
