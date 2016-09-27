@@ -27,7 +27,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <cstdint>
 #include <array>
 #include <assert.h>
+
+#if _MSC_VER
 #include <immintrin.h>
+#endif
+
+#if __GNUC__
+#include <x86intrin.h>
+#endif
 
 
 /*
@@ -90,12 +97,12 @@ public:
 
 public:
 
-  inline explicit morton3d() : key(0){};
-	inline explicit morton3d(const T _key) : key(_key){};
+	inline explicit morton3d() : key(0) {};
+	inline explicit morton3d(const T _key) : key(_key) {};
 
-  /* If BMI2 intrinsics are not available, we rely on a look up table of precomputed morton codes. 
-  Ref : http://www.forceflow.be/2013/10/07/morton-encodingdecoding-through-bit-interleaving-implementations/ */
-	inline morton3d(const uint32_t x, const uint32_t y, const uint32_t z) : key(0){
+	/* If BMI2 intrinsics are not available, we rely on a look up table of precomputed morton codes.
+	Ref : http://www.forceflow.be/2013/10/07/morton-encodingdecoding-through-bit-interleaving-implementations/ */
+	inline morton3d(const uint32_t x, const uint32_t y, const uint32_t z) : key(0) {
 #ifdef USE_BMI2
 		key = static_cast<T>(_pdep_u64(z, z3_mask) | _pdep_u64(y, y3_mask) | _pdep_u64(x, x3_mask));
 #else
@@ -113,18 +120,18 @@ public:
 #endif
 	}
 
-  inline void decode(uint64_t& x, uint64_t& y, uint64_t& z) const
-  {
+	inline void decode(uint64_t& x, uint64_t& y, uint64_t& z) const
+	{
 #ifdef USE_BMI2
-    x = _pext_u64(this->key, x3_mask);
-    y = _pext_u64(this->key, y3_mask);
-    z = _pext_u64(this->key, z3_mask);
+		x = _pext_u64(this->key, x3_mask);
+		y = _pext_u64(this->key, y3_mask);
+		z = _pext_u64(this->key, z3_mask);
 #else
-    x = compactBits(this->key >> 2);
-    y = compactBits(this->key >> 1);
-    z = compactBits(this->key);
+		x = compactBits(this->key >> 2);
+		y = compactBits(this->key >> 1);
+		z = compactBits(this->key);
 #endif
-  }
+	}
 
 	//Binary operators
 	inline bool operator==(const morton3d m1) const
@@ -147,39 +154,39 @@ public:
 		return morton3d<T>(this->key & m1.key);
 	}
 
-	inline morton3d operator>>(const uint64_t d) const
+	inline morton3d operator >> (const uint64_t d) const
 	{
-		assert(d<22);
+		assert(d < 22);
 		return morton3d<T>(this->key >> (3 * d));
 	}
 
 	inline morton3d operator<<(const uint64_t d) const
 	{
-		assert(d<22);
+		assert(d < 22);
 		return morton3d<T>(this->key << (3 * d));
 	}
 
-  inline void operator+=(const morton3d<T> m1)
-  {
-    T x_sum = (this->key | yz3_mask) + (m1.key & x3_mask);
-    T y_sum = (this->key | xz3_mask) + (m1.key & y3_mask);
-    T z_sum = (this->key | xy3_mask) + (m1.key & z3_mask);
-    this->key = ((x_sum & x3_mask) | (y_sum & y3_mask) | (z_sum & z3_mask));
-  }
+	inline void operator+=(const morton3d<T> m1)
+	{
+		T x_sum = (this->key | yz3_mask) + (m1.key & x3_mask);
+		T y_sum = (this->key | xz3_mask) + (m1.key & y3_mask);
+		T z_sum = (this->key | xy3_mask) + (m1.key & z3_mask);
+		this->key = ((x_sum & x3_mask) | (y_sum & y3_mask) | (z_sum & z3_mask));
+	}
 
-  inline void operator-=(const morton3d<T> m1)
-  {
-    T x_diff = (this->key & x3_mask) - (m1.key & x3_mask);
-    T y_diff = (this->key & y3_mask) - (m1.key & y3_mask);
-    T z_diff = (this->key & z3_mask) - (m1.key & z3_mask);
-   this->key = ((x_diff & x3_mask) | (y_diff & y3_mask) | (z_diff & z3_mask));
-  }
+	inline void operator-=(const morton3d<T> m1)
+	{
+		T x_diff = (this->key & x3_mask) - (m1.key & x3_mask);
+		T y_diff = (this->key & y3_mask) - (m1.key & y3_mask);
+		T z_diff = (this->key & z3_mask) - (m1.key & z3_mask);
+		this->key = ((x_diff & x3_mask) | (y_diff & y3_mask) | (z_diff & z3_mask));
+	}
 
 #ifndef USE_BMI2
-  /* Fast encode of morton3 code when BMI2 instructions aren't available.
-  This does not work for values greater than 256.
-  
-  This function takes roughly the same time as a full encode (64 bits) using BMI2 intrinsic.*/
+	/* Fast encode of morton3 code when BMI2 instructions aren't available.
+	This does not work for values greater than 256.
+
+	This function takes roughly the same time as a full encode (64 bits) using BMI2 intrinsic.*/
 	static inline morton3d morton3d_256(const uint32_t x, const uint32_t y, const uint32_t z)
 	{
 		assert(x < 256 && y < 256 && z < 256);
@@ -190,10 +197,10 @@ public:
 	}
 #endif
 
-  /* Increment X part of a morton3 code (xyz interleaving) 
-     morton3(4,5,6).incX() == morton3(5,5,6);
-     
-     Ref : http://bitmath.blogspot.fr/2012/11/tesseral-arithmetic-useful-snippets.html */
+	/* Increment X part of a morton3 code (xyz interleaving)
+	   morton3(4,5,6).incX() == morton3(5,5,6);
+
+	   Ref : http://bitmath.blogspot.fr/2012/11/tesseral-arithmetic-useful-snippets.html */
 	inline morton3d incX() const
 	{
 		const T x_sum = static_cast<T>((this->key | yz3_mask) + 4);
@@ -203,81 +210,81 @@ public:
 	inline morton3d incY() const
 	{
 		const T y_sum = static_cast<T>((this->key | xz3_mask) + 2);
-    return morton3d<T>((y_sum & y3_mask) | (this->key & xz3_mask));
+		return morton3d<T>((y_sum & y3_mask) | (this->key & xz3_mask));
 	}
 
-  inline morton3d incZ() const
+	inline morton3d incZ() const
 	{
-    const T z_sum = static_cast<T>((this->key | xy3_mask) + 1);
-    return morton3d<T>((z_sum & z3_mask) | (this->key & xy3_mask));
+		const T z_sum = static_cast<T>((this->key | xy3_mask) + 1);
+		return morton3d<T>((z_sum & z3_mask) | (this->key & xy3_mask));
 	}
 
-  /* Decrement X part of a morton3 code (xyz interleaving) 
-     morton3(4,5,6).decX() == morton3(3,5,6); */
-  inline morton3d decX() const
+	/* Decrement X part of a morton3 code (xyz interleaving)
+	   morton3(4,5,6).decX() == morton3(3,5,6); */
+	inline morton3d decX() const
 	{
-    const T x_diff = (this->key & x3_mask) - 4;
-    return morton3d<T>((x_diff & x3_mask) | (this->key & yz3_mask));
+		const T x_diff = (this->key & x3_mask) - 4;
+		return morton3d<T>((x_diff & x3_mask) | (this->key & yz3_mask));
 	}
 
-  inline morton3d decY() const
+	inline morton3d decY() const
 	{
-    const T y_diff = (this->key & y3_mask) - 2;
-    return morton3d<T>((y_diff & y3_mask) | (this->key & xz3_mask));
+		const T y_diff = (this->key & y3_mask) - 2;
+		return morton3d<T>((y_diff & y3_mask) | (this->key & xz3_mask));
 	}
 
-  inline morton3d decZ() const
+	inline morton3d decZ() const
 	{
-    const T z_diff = (this->key & z3_mask) - 1;
-    return morton3d<T>((z_diff & z3_mask) | (this->key & xy3_mask));
+		const T z_diff = (this->key & z3_mask) - 1;
+		return morton3d<T>((z_diff & z3_mask) | (this->key & xy3_mask));
 	}
 
 
-  /*
-    min(morton3(4,5,6), morton3(8,3,7)) == morton3(4,3,6);
-    Ref : http://asgerhoedt.dk/?p=276
-  */
-  static inline morton3d min(const morton3d lhs, const morton3d rhs)
-  {
-    T lhsX = lhs.key & x3_mask;
-    T rhsX = rhs.key & x3_mask;
-    T lhsY = lhs.key & y3_mask;
-    T rhsY = rhs.key & y3_mask;
-    T lhsZ = lhs.key & z3_mask;
-    T rhsZ = rhs.key & z3_mask;
-    return morton3d<T>(std::min(lhsX, rhsX) + std::min(lhsY, rhsY) + std::min(lhsZ, rhsZ));
-  }
+	/*
+	  min(morton3(4,5,6), morton3(8,3,7)) == morton3(4,3,6);
+	  Ref : http://asgerhoedt.dk/?p=276
+	*/
+	static inline morton3d min(const morton3d lhs, const morton3d rhs)
+	{
+		T lhsX = lhs.key & x3_mask;
+		T rhsX = rhs.key & x3_mask;
+		T lhsY = lhs.key & y3_mask;
+		T rhsY = rhs.key & y3_mask;
+		T lhsZ = lhs.key & z3_mask;
+		T rhsZ = rhs.key & z3_mask;
+		return morton3d<T>(std::min(lhsX, rhsX) + std::min(lhsY, rhsY) + std::min(lhsZ, rhsZ));
+	}
 
-  /*
-    max(morton3(4,5,6), morton3(8,3,7)) == morton3(8,5,7);
-  */
-  static inline morton3d max(const morton3d lhs, const morton3d rhs)
-  {
-    T lhsX = lhs.key & x3_mask;
-    T rhsX = rhs.key & x3_mask;
-    T lhsY = lhs.key & y3_mask;
-    T rhsY = rhs.key & y3_mask;
-    T lhsZ = lhs.key & z3_mask;
-    T rhsZ = rhs.key & z3_mask;
-    return morton3d<T>(std::max(lhsX, rhsX) + std::max(lhsY, rhsY) + std::max(lhsZ, rhsZ));
-  }
+	/*
+	  max(morton3(4,5,6), morton3(8,3,7)) == morton3(8,5,7);
+	*/
+	static inline morton3d max(const morton3d lhs, const morton3d rhs)
+	{
+		T lhsX = lhs.key & x3_mask;
+		T rhsX = rhs.key & x3_mask;
+		T lhsY = lhs.key & y3_mask;
+		T rhsY = rhs.key & y3_mask;
+		T lhsZ = lhs.key & z3_mask;
+		T rhsZ = rhs.key & z3_mask;
+		return morton3d<T>(std::max(lhsX, rhsX) + std::max(lhsY, rhsY) + std::max(lhsZ, rhsZ));
+	}
 
 private:
-  inline uint64_t compactBits(uint64_t n) const
-  {
-    n &= 0x1249249249249249;
-    n = (n ^ (n >> 2))  & 0x30c30c30c30c30c3;
-    n = (n ^ (n >> 4))  & 0xf00f00f00f00f00f;
-    n = (n ^ (n >> 8))  & 0x00ff0000ff0000ff;
-    n = (n ^ (n >> 16)) & 0x00ff00000000ffff;
-    n = (n ^ (n >> 32)) & 0x1fffff;
-    return n;
-  }
+	inline uint64_t compactBits(uint64_t n) const
+	{
+		n &= 0x1249249249249249;
+		n = (n ^ (n >> 2)) & 0x30c30c30c30c30c3;
+		n = (n ^ (n >> 4)) & 0xf00f00f00f00f00f;
+		n = (n ^ (n >> 8)) & 0x00ff0000ff0000ff;
+		n = (n ^ (n >> 16)) & 0x00ff00000000ffff;
+		n = (n ^ (n >> 32)) & 0x1fffff;
+		return n;
+	}
 
 };
 
 
-/* Add two morton keys (xyz interleaving) 
+/* Add two morton keys (xyz interleaving)
   morton3(4,5,6) + morton3(1,2,3) == morton3(5,7,9);*/
 template<class T>
 inline morton3d<T> operator+(const morton3d<T> m1, const morton3d<T> m2)
@@ -288,7 +295,7 @@ inline morton3d<T> operator+(const morton3d<T> m1, const morton3d<T> m2)
 	return morton3d<T>((x_sum & x3_mask) | (y_sum & y3_mask) | (z_sum & z3_mask));
 }
 
-/* Substract two morton keys (xyz interleaving) 
+/* Substract two morton keys (xyz interleaving)
    morton3(4,5,6) - morton3(1,2,3) == morton3(3,3,3);*/
 template<class T>
 inline morton3d<T> operator-(const morton3d<T> m1, const morton3d<T> m2)
@@ -302,34 +309,34 @@ inline morton3d<T> operator-(const morton3d<T> m1, const morton3d<T> m2)
 template<class T>
 inline bool operator< (const morton3d<T>& lhs, const morton3d<T>& rhs)
 {
-  return (lhs.key) < (rhs.key);
+	return (lhs.key) < (rhs.key);
 }
 
 template<class T>
 inline bool operator> (const morton3d<T>& lhs, const morton3d<T>& rhs)
 {
-  return (lhs.key) > (rhs.key);
+	return (lhs.key) > (rhs.key);
 }
 
 template<class T>
 inline bool operator>= (const morton3d<T>& lhs, const morton3d<T>& rhs)
 {
-  return (lhs.key) >= (rhs.key);
+	return (lhs.key) >= (rhs.key);
 }
 
 template<class T>
 inline bool operator<= (const morton3d<T>& lhs, const morton3d<T>& rhs)
 {
-  return (lhs.key) <= (rhs.key);
+	return (lhs.key) <= (rhs.key);
 }
 
 template<class T>
 std::ostream& operator<<(std::ostream& os, const morton3d<T>& m)
 {
-  uint64_t x, y, z;
-  m.decode(x, y, z);
-  os << m.key << ": " << x << ", " << y << ", " << z ;
-  return os;
+	uint64_t x, y, z;
+	m.decode(x, y, z);
+	os << m.key << ": " << x << ", " << y << ", " << z;
+	return os;
 }
 
 typedef morton3d<> morton3;
