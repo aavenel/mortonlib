@@ -41,7 +41,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 BMI2 (Bit Manipulation Instruction Set 2) is a special set of instructions available for intel core i5, i7 (since Haswell architecture) and Xeon E3.
 Some instructions are not available for Microsoft Visual Studio older than 2013.
 */
+#if _MSC_VER
 #define USE_BMI2
+#endif
 
 #ifndef USE_BMI2
 //mortonkey(x+1) = (mortonkey(x) - MAXMORTONKEY) & MAXMORTONKEY
