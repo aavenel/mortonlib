@@ -4,6 +4,9 @@ language: cpp
 compiler:
   - clang
   - gcc
+env:
+  - CONFIG=Debug
+  - CONFIG=Release
 # Build steps
 script:
   - mkdir build

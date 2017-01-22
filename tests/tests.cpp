@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
 	test_morton2d();
 	test_morton3d();
 	benchmark2d();
-	benchmark3d();
+	//benchmark3d();
 	return 0;
 }
 
