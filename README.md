@@ -1,6 +1,6 @@
 # Mortonlib
 
-[![Build Status](https://api.travis-ci.org/aavenel/mortonlib.svg)](https://travis-ci.org/aavenel/mortonlib)
+[![Build Status](https://travis-ci.org/aavenel/mortonlib.svg?branch=master)](https://travis-ci.org/aavenel/mortonlib)
 
 A lib for basic arithmetic with morton code.
 
