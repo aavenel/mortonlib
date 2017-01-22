@@ -1,10 +1,8 @@
 #include <stdio.h>
-#include <tchar.h>
 #include <assert.h>
 #include <cstdint>
 
 #include <iostream>
-
 #include "../include/morton2d.h"
 #include "../include/morton3d.h"
 #include "benchmark.h"
